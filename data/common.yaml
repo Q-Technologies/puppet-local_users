@@ -1,0 +1,3 @@
+---
+local_users::root_home_dir: /root
+local_users::user_home_location: /home
