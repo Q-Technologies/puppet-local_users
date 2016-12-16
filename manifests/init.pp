@@ -4,8 +4,6 @@ class local_users(
   String $user_home_location,
 ) {
 
-  Boolean $managehome = false
-
   include stdlib
 
   $users = hiera_hash( "local_users::users" )
