@@ -4,6 +4,8 @@ class local_users(
   String $user_home_location,
 ) {
 
+  Boolean $managehome = false
+
   include stdlib
 
   $users = hiera_hash( "local_users::users" )
@@ -12,6 +14,9 @@ class local_users(
   $users.each | $user, $props | {
     #notify { "Checking user: $user ($props)": }
 
+    $name = $user
+
+    # Make sure we have the UID - root's can be guessed
     if $props[uid] {
       $uid = $props[uid]
     }
@@ -20,23 +25,23 @@ class local_users(
         $uid = 0
       }
       else {
-        fail( "The UID of user $user must be specified" )
+        #let system decide
       }
     }
 
+    # Make sure we have the GID - use the UID if not specified
     if $props[gid] {
       $gid = $props[gid]
     }
     else {
-      if $user == "root" {
-        $gid = 0
-      }
-      else {
-        fail( "The GID of user $user must be specified" )
-      }
+      $gid = $uid
     }
 
-    unless $props[home] {
+    # Make sure we have the home directory - root's can be guessed
+    if $user[home] {
+      $home = $user[home]
+    }
+    else {
       if $user == "root" {
           $home = $root_home_dir
       }
@@ -44,17 +49,120 @@ class local_users(
           $home = "$user_home_location/$user"
       }
     }
+    # Find the mode of the home directory
+    if $user[mode] {
+      $mode = $user[mode]
+    }
+    else {
+      $mode = '0750'
+    }
+   
+    # Make sure we have a decent GECOS - root's can be guessed
+    if $props[comment] {
+      $comment = $props[comment]
+    }
+    else {
+      if $user == "root" {
+        $comment = $user
+      }
+      else {
+        fail( "The GECOS of user $user must be specified" )
+      }
+    }
 
-    $merged_props = merge( $props, { uid => $uid, gid => $gid, home => $home } )
+    $groups = $props[groups]
+
+    # Work around some platform idiosychronies
+    case $osfamily {
+      'Suse': { 
+             $expiry_param = '9999-12-31'
+             $groups_param = $groups
+             $password_max_age = '99999'
+      }
+      'AIX':  { 
+             $expiry_param = 'absent'
+             $groups_param = $groups << $name # Add the primary group as well - required for AIX
+             $password_max_age = '0'
+      }
+      default:{ 
+             $expiry_param = 'absent'
+             $groups_param = $groups 
+             $password_max_age = '99999'
+      }
+    }
+
  
-    $defaults = {
-      ensure   => present,
-      purge_ssh_keys => true,
+    # Make sure the specified group exists
+    $grp_defaults = {
+        ensure               => present,
+        allowdupe            => true,
+        system               => true, 
+        auth_membership      => true,
+        forcelocal           => true,
     } 
 
-    $clean_props = delete( $merged_props, ['auth_keys'] )
-    create_resources( user, { $user => $clean_props }, $defaults )
+    # Set up the defaults for the user resource creation
+    $usr_defaults = {
+      ensure   => present,
+      purge_ssh_keys => true,
+        managehome           => false,
+        forcelocal           => true,
+        membership           => inclusive,
+    } 
 
+    # Merge our optimisations with the raw hiera data
+    $merged_props = merge( $props, { home => $home, 
+                                     comment => $comment, 
+                                   } )
+
+    # Add exprity parameters - if required
+    if $props[expiry] == 'none' {
+      $merged_props2 = merge( $merged_props, { expiry => $expiry_param, 
+                                               password_max_age => $password_max_age, 
+                                             } )
+    }
+    else {
+      $merged_props2 = $merged_props
+    }
+
+    # Add in additional groups - if required
+    if $props[groups] {
+      $merged_props3 = merge( $merged_props2, { groups => $groups_param } )
+    }
+    else {
+      $merged_props3 = $merged_props2
+    }
+
+    # Delete keys not understood by the user resource
+    $clean_props = delete( $merged_props3, ['auth_keys'] )
+
+    # If a UID is specified, supply GID also
+    if $uid {
+      # Merge our optimisations with the raw hiera data
+      $user_props = merge( $clean_props, { uid => $uid, 
+                                           gid => $gid, 
+                                         } )
+      create_resources( group, { $name => { gid => $gid} }, $grp_defaults ) ->
+      create_resources( user, { $user => $user_props }, $usr_defaults )
+    }
+    # If the UID is not specified, let the system decide
+    else {
+      $user_props = $clean_props
+      create_resources( user, { $user => $user_props }, $usr_defaults )
+    }
+
+    # Make sure each user has a home directory
+    file { "${user}home":
+      path    => $home,
+      ensure  => directory,
+      owner   => $uid,
+      group   => $gid,
+      seluser => "system_u",
+      mode    => $mode,
+      require => User[$user],
+    }
+
+    # Add the specified SSH keys to the account
     $keys = $props[auth_keys]
     $keys.each | $key | {
         #notify { "Checking authorized keys for $user: $key": }

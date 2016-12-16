@@ -11,6 +11,13 @@
   "dependencies": [],
   "operatingsystem_support": [
     {
+      "operatingsystem":"AIX",
+      "operatingsystemrelease": [
+        "6.1",
+        "7.1"
+      ]
+    },
+    {
       "operatingsystem":"Debian",
       "operatingsystemrelease": [
         "7.0",
