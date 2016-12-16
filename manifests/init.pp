@@ -132,7 +132,7 @@ class local_users(
     }
 
     # Delete keys not understood by the user resource
-    $clean_props = delete( $merged_props3, ['auth_keys'] )
+    $clean_props = delete( $merged_props3, ['auth_keys','mode'] )
 
     # If a UID is specified, supply GID also
     if $uid {
