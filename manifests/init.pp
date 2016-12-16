@@ -36,8 +36,8 @@ class local_users(
     }
 
     # Make sure we have the home directory - root's can be guessed
-    if $user[home] {
-      $home = $user[home]
+    if $props[home] {
+      $home = $props[home]
     }
     else {
       if $user == "root" {
@@ -48,8 +48,8 @@ class local_users(
       }
     }
     # Find the mode of the home directory
-    if $user[mode] {
-      $mode = $user[mode]
+    if $props[mode] {
+      $mode = $props[mode]
     }
     else {
       $mode = '0750'
