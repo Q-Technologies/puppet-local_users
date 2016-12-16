@@ -140,7 +140,7 @@ class local_users(
       $user_props = merge( $clean_props, { uid => $uid, 
                                            gid => $gid, 
                                          } )
-      create_resources( group, { $name => { gid => $gid} }, $grp_defaults ) ->
+      create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
       create_resources( user, { $user => $user_props }, $usr_defaults )
     }
     # If the UID is not specified, let the system decide
@@ -173,6 +173,7 @@ class local_users(
                     user => $user,
                     type => $user_key['type'],
                     key  => $user_key['key'],
+                    require => File["${user}home"],
                 }
             }
         }
