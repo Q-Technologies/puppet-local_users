@@ -72,11 +72,13 @@ class local_users(
 
     # Work around some platform idiosychronies
     case $osfamily {
-      /*'Suse': { 
-             $expiry_param = '9999-12-31'
+      'Suse': { 
+            if $facts[operatingsystem] == "SLES" and ($facts[operatingsystemmajrelease]+0) < 12 {
+              $expiry_param = '9999-12-31'
+            }
              $groups_param = $groups
              $password_max_age = '99999'
-      }*/
+      }
       'AIX':  { 
              $expiry_param = 'absent'
              $groups_param = $groups << $name # Add the primary group as well - required for AIX
