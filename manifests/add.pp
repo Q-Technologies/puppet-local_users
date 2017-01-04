@@ -94,31 +94,31 @@ class local_users::add (
  
     # Make sure the specified group exists
     $grp_defaults = {
-        ensure               => present,
-        allowdupe            => true,
-        system               => true, 
-        auth_membership      => true,
-        forcelocal           => true,
+      ensure               => present,
+      allowdupe            => true,
+      system               => true, 
+      auth_membership      => true,
+      forcelocal           => true,
     } 
 
     # Set up the defaults for the user resource creation
     $usr_defaults = {
-      ensure   => present,
-      purge_ssh_keys => true,
-        managehome           => false,
-        forcelocal           => true,
-        membership           => inclusive,
+      ensure               => present,
+      purge_ssh_keys       => true,
+      managehome           => false,
+      forcelocal           => true,
+      membership           => inclusive,
     } 
 
     # Merge our optimisations with the raw hiera data
-    $merged_props = merge( $props, { home => $home, 
+    $merged_props = merge( $props, { home    => $home, 
                                      comment => $comment, 
                                    } )
 
     # Add exprity parameters - if required
     if $props[expiry] == 'none' {
-      $merged_props2 = merge( $merged_props, { expiry => $expiry_param, 
-                                               password_max_age => $password_max_age, 
+      $merged_props2 = merge( $merged_props, { expiry           => $expiry_param,
+                                               password_max_age => $password_max_age,
                                              } )
     }
     else {
@@ -164,21 +164,23 @@ class local_users::add (
 
     # Add the specified SSH keys to the account
     $keys = $props[auth_keys]
-    $keys.each | $key | {
+    if $keys.is_a(Array) {
+      $keys.each | $key | {
         #notify { "Checking authorized keys for $user: $key": }
         $users_keys.each | $user_key | {
-            $comment = $user_key[comment]
-            #notify { "Checking authorized keys for $user: $key ($comment)": }
-            if $comment == $key {
-                #notify { "Found authorized keys for $user: $key": }
-                ssh_authorized_key { "$comment for $user":
-                    user => $user,
-                    type => $user_key['type'],
-                    key  => $user_key['key'],
-                    require => File["${user}home"],
-                }
+          $comment = $user_key[comment]
+          #notify { "Checking authorized keys for $user: $key ($comment)": }
+          if $comment == $key {
+            #notify { "Found authorized keys for $user: $key": }
+            ssh_authorized_key { "$comment for $user":
+              user => $user,
+              type => $user_key['type'],
+              key  => $user_key['key'],
+              require => File["${user}home"],
             }
+          }
         }
+      }
     }
   }
   
