@@ -164,7 +164,7 @@ class local_users::add (
 
     # Add the specified SSH keys to the account
     $keys = $props[auth_keys]
-    if $keys.is_a(Array) {
+    if $keys =~ Array {
       $keys.each | $key | {
         #notify { "Checking authorized keys for $user: $key": }
         $users_keys.each | $user_key | {
