@@ -3,6 +3,7 @@ class local_users::remove (
 ) {
 
   $users_to_remove = hiera_array( 'local_users::remove::users', [] )
+  $groups_to_remove = hiera_array( 'local_users::remove::groups', [] )
 
   $users_to_remove.each | $user | {
     exec { "killing ${user}":
@@ -13,8 +14,13 @@ class local_users::remove (
     user { $user:
       ensure     => absent,
       forcelocal => true,
-
     }
   }
   
+  $groups_to_remove.each | $group | {
+    group { $group:
+      ensure     => absent,
+      forcelocal => true,
+    }
+  }
 }

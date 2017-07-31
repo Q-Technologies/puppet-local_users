@@ -6,8 +6,34 @@ class local_users::add (
 
   include stdlib
 
-  $users = hiera_hash( "local_users::add::users" )
-  $users_keys = hiera( "local_users::add::keys" )
+  # Set up the defaults for the group resource creation
+  $grp_defaults = {
+    ensure               => present,
+    #allowdupe            => true,
+    system               => true, 
+    auth_membership      => true,
+    forcelocal           => true,
+  } 
+
+  # Set up the defaults for the user resource creation
+  $usr_defaults = {
+    ensure               => present,
+    purge_ssh_keys       => true,
+    managehome           => false,
+    forcelocal           => true,
+    membership           => inclusive,
+  } 
+
+  # Do group actions first
+  $groups = hiera_hash( "local_users::add::groups", {} )
+
+  $groups.each | $group, $props | {
+    create_resources( group, { $group => $props }, $grp_defaults )
+  }
+
+  # Then perform actions on users
+  $users = hiera_hash( "local_users::add::users", {} )
+  $users_keys = hiera( "local_users::add::keys", [] )
 
   $users.each | $user, $props | {
     #notify { "Checking user: $user ($props)": }
@@ -92,24 +118,6 @@ class local_users::add (
     }
 
  
-    # Make sure the specified group exists
-    $grp_defaults = {
-      ensure               => present,
-      allowdupe            => true,
-      system               => true, 
-      auth_membership      => true,
-      forcelocal           => true,
-    } 
-
-    # Set up the defaults for the user resource creation
-    $usr_defaults = {
-      ensure               => present,
-      purge_ssh_keys       => true,
-      managehome           => false,
-      forcelocal           => true,
-      membership           => inclusive,
-    } 
-
     # Merge our optimisations with the raw hiera data
     $merged_props = merge( $props, { home    => $home, 
                                      comment => $comment, 
@@ -142,6 +150,7 @@ class local_users::add (
       $user_props = merge( $clean_props, { uid => $uid, 
                                            gid => $gid, 
                                          } )
+      # Make sure the specified group exists
       create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
       create_resources( user, { $user => $user_props }, $usr_defaults )
     }

@@ -1,5 +1,5 @@
 # puppet-local_users
-Puppet module to easily manage local users and their authorized keys.
+Puppet module to easily manage local users and their authorized keys.  It also manages local groups. It's an abstraction layer over the user and group resources to make it easier to add/remove users/groups across different systems using just hiera and calling this class.
 
 Features:
   * maps keys into accounts according to the SSH key comment
@@ -24,7 +24,7 @@ Include the class:
 Specify hiera details along the following lines:
 
 ```
-local_users::keys:
+local_users::add::keys:
   -
     comment: 'jblogs@imac.local'
     type: ssh-rsa 
@@ -38,7 +38,7 @@ local_users::keys:
     type: ssh-rsa
     key: 'AAAAB3NzaC1yc2EAAAADAQABAAABAQDFcGZD9nyS34Q4olunx2UgN3XKmZqQT2CeKNiuA2/KJkscty9tWP4cG4syEGY21ws3YL11KLYlI1oH4r2qiBk/AdyKhqpo10sCdCuOVAA+kXK7UQGyAjjwlkCLMYkofjEc5iauz1E6d9UOyrtSMnWZ+B59tq5Kd5zPMXAG1MrzWRO4bB2LwT82HaxXKdoon3VCB7jnXKMYQkj1o890HFp/RA1r4B+EBMDf6Op6iSsQsZGG4607Qvhrf8mfeJbSJiK3FezbO7i2hbIyqfzTNaDgzAexJNpsO/67nlytLs9w2Sx7npdp8faMECPQU0DW31e2UckXgDN43edYpYlNNV/N'
 
-local_users::users:
+local_users::add::users:
   jblogs:
     uid: 1000
     comment: Joe Blogs
@@ -57,9 +57,27 @@ local_users::users:
     auth_keys: 
       - 'jblogs@imac.local'
       - 'root@prd009'
+
+local_users::remove::users:
+  - jsmith
+  - bob
+
+local_users::add::groups:
+  admin: {}
+  git:
+    gid: 15002
+
+local_users::remove::groupss:
+  - thesmiths
+  - builders
+
 ```
 
 ## Issues
+Only tested on UNIX/Linux type systems.
+
+Since version 1.0.1 of this module duplicate GIDs will not be forced through.  This will create an issue if you have previously relied on this behaviour.
+
 This module does not check for the existance of the users groups first - which might mean a duplicate is created rather than failing.
 
 This module is using hiera data that is embedded in the module rather than using a params class.  This may not play nicely with other modules using the same technique unless you are using hiera 3.0.6 and above (PE 2015.3.2+).
