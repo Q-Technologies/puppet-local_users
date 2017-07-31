@@ -1,8 +1,9 @@
+# Manage local users/groups just through hiera
 class local_users(
   # Class parameters are populated from module hiera data
 ) {
 
-  class { 'local_users::remove': } ->
-  class { 'local_users::add': }
-  
+  class { 'local_users::remove': }
+  -> class { 'local_users::add': }
+
 }

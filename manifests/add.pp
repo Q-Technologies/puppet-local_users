@@ -1,3 +1,4 @@
+# Add any specified users and groups
 class local_users::add (
   # Class parameters are populated from module hiera data
   String $root_home_dir,
@@ -10,10 +11,10 @@ class local_users::add (
   $grp_defaults = {
     ensure               => present,
     #allowdupe            => true,
-    system               => true, 
+    system               => true,
     auth_membership      => true,
     forcelocal           => true,
-  } 
+  }
 
   # Set up the defaults for the user resource creation
   $usr_defaults = {
@@ -22,18 +23,18 @@ class local_users::add (
     managehome           => false,
     forcelocal           => true,
     membership           => inclusive,
-  } 
+  }
 
   # Do group actions first
-  $groups = hiera_hash( "local_users::add::groups", {} )
+  $groups = hiera_hash( 'local_users::add::groups', {} )
 
   $groups.each | $group, $props | {
     create_resources( group, { $group => $props }, $grp_defaults )
   }
 
   # Then perform actions on users
-  $users = hiera_hash( "local_users::add::users", {} )
-  $users_keys = hiera( "local_users::add::keys", [] )
+  $users = hiera_hash( 'local_users::add::users', {} )
+  $users_keys = hiera( 'local_users::add::keys', [] )
 
   $users.each | $user, $props | {
     #notify { "Checking user: $user ($props)": }
@@ -45,7 +46,7 @@ class local_users::add (
       $uid = $props[uid]
     }
     else {
-      if $user == "root" {
+      if $user == 'root' {
         $uid = 0
       }
       else {
@@ -66,11 +67,11 @@ class local_users::add (
       $home = $props[home]
     }
     else {
-      if $user == "root" {
+      if $user == 'root' {
           $home = $root_home_dir
       }
       else {
-          $home = "$user_home_location/$user"
+          $home = "${user_home_location}/${user}"
       }
     }
     # Find the mode of the home directory
@@ -80,54 +81,54 @@ class local_users::add (
     else {
       $mode = '0750'
     }
-   
+
     # Make sure we have a decent GECOS - root's can be guessed
     if $props[comment] {
       $comment = $props[comment]
     }
     else {
-      if $user == "root" {
+      if $user == 'root' {
         $comment = $user
       }
       else {
-        fail( "The GECOS of user $user must be specified" )
+        fail( "The GECOS of user ${user} must be specified" )
       }
     }
 
     $groups = $props[groups]
 
     # Work around some platform idiosychronies
-    case $osfamily {
-      'Suse': { 
-            if $facts[operatingsystem] == "SLES" and ($facts[operatingsystemmajrelease]+0) < 12 {
+    case $facts['os']['family'] {
+      'Suse': {
+            if $facts[operatingsystem] == 'SLES' and ($facts[operatingsystemmajrelease]+0) < 12 {
               $expiry_param = '9999-12-31'
             }
-             $groups_param = $groups
-             $password_max_age = '99999'
+            $groups_param = $groups
+            $password_max_age = '99999'
       }
-      'AIX':  { 
-             $expiry_param = 'absent'
-             $groups_param = $groups << $name # Add the primary group as well - required for AIX
-             $password_max_age = '0'
+      'AIX':  {
+            $expiry_param = 'absent'
+            $groups_param = $groups << $name # Add the primary group as well - required for AIX
+            $password_max_age = '0'
       }
-      default:{ 
-             $expiry_param = 'absent'
-             $groups_param = $groups 
-             $password_max_age = '99999'
+      default:{
+            $expiry_param = 'absent'
+            $groups_param = $groups
+            $password_max_age = '99999'
       }
     }
 
- 
+
     # Merge our optimisations with the raw hiera data
-    $merged_props = merge( $props, { home    => $home, 
-                                     comment => $comment, 
-                                   } )
+    $merged_props = merge( $props,  { home    => $home,
+                                      comment => $comment,
+                                    } )
 
     # Add exprity parameters - if required
     if $props[expiry] == 'none' {
-      $merged_props2 = merge( $merged_props, { expiry           => $expiry_param,
-                                               password_max_age => $password_max_age,
-                                             } )
+      $merged_props2 = merge( $merged_props,  { expiry           => $expiry_param,
+                                                password_max_age => $password_max_age,
+                                              } )
     }
     else {
       $merged_props2 = $merged_props
@@ -147,9 +148,9 @@ class local_users::add (
     # If a UID is specified, supply GID also
     if $uid {
       # Merge our optimisations with the raw hiera data
-      $user_props = merge( $clean_props, { uid => $uid, 
-                                           gid => $gid, 
-                                         } )
+      $user_props = merge( $clean_props,  { uid => $uid,
+                                            gid => $gid,
+                                          } )
       # Make sure the specified group exists
       create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
       create_resources( user, { $user => $user_props }, $usr_defaults )
@@ -162,11 +163,11 @@ class local_users::add (
 
     # Make sure each user has a home directory
     file { "${user}home":
-      path    => $home,
       ensure  => directory,
+      path    => $home,
       owner   => $uid,
       group   => $gid,
-      seluser => "system_u",
+      seluser => 'system_u',
       mode    => $mode,
       require => User[$user],
     }
@@ -181,10 +182,10 @@ class local_users::add (
           #notify { "Checking authorized keys for $user: $key ($comment)": }
           if $comment == $key {
             #notify { "Found authorized keys for $user: $key": }
-            ssh_authorized_key { "$comment for $user":
-              user => $user,
-              type => $user_key['type'],
-              key  => $user_key['key'],
+            ssh_authorized_key { "${comment} for ${user}":
+              user    => $user,
+              type    => $user_key['type'],
+              key     => $user_key['key'],
               require => File["${user}home"],
             }
           }
@@ -192,5 +193,5 @@ class local_users::add (
       }
     }
   }
-  
+
 }

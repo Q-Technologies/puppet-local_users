@@ -1,3 +1,4 @@
+# Remove any specified users and groups
 class local_users::remove (
   # Class parameters are populated from module hiera data
 ) {
@@ -10,13 +11,13 @@ class local_users::remove (
       command => "pkill -9 -u ${user}",
       onlyif  => "grep '^${user}' /etc/passwd && ps -u ${user}",
       path    => [ '/bin', '/sbin', '/usr/bin', '/usr/sbin' ],
-    } ->
-    user { $user:
+    }
+    -> user { $user:
       ensure     => absent,
       forcelocal => true,
     }
   }
-  
+
   $groups_to_remove.each | $group | {
     group { $group:
       ensure     => absent,
