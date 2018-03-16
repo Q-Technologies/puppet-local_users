@@ -1,4 +1,4 @@
-# puppet-local_users
+# local_users
 Puppet module to easily manage local users and their authorized keys.  It also manages local groups. It's an abstraction layer over the user and group resources to make it easier to add/remove users/groups across different systems using just hiera and calling this class.
 
 Features:
@@ -80,4 +80,4 @@ Since version 1.0.1 of this module duplicate GIDs will not be forced through.  T
 
 This module does not check for the existance of the users groups first - which might mean a duplicate is created rather than failing.
 
-This module is using hiera data that is embedded in the module rather than using a params class.  This may not play nicely with other modules using the same technique unless you are using hiera 3.0.6 and above (PE 2015.3.2+).
+Since version 1.1.0 it requires Puppet 4 and above (hiera functions were replaced with lookup) and internal hiera was converted to version 5

@@ -26,15 +26,15 @@ class local_users::add (
   }
 
   # Do group actions first
-  $groups = hiera_hash( 'local_users::add::groups', {} )
+  $groups = lookup( 'local_users::add::groups', Data, 'deep', {} )
 
   $groups.each | $group, $props | {
     create_resources( group, { $group => $props }, $grp_defaults )
   }
 
   # Then perform actions on users
-  $users = hiera_hash( 'local_users::add::users', {} )
-  $users_keys = hiera( 'local_users::add::keys', [] )
+  $users = lookup( 'local_users::add::users', Data, 'deep', {} )
+  $users_keys = lookup( 'local_users::add::keys', Collection, 'unique', [] )
 
   $users.each | $user, $props | {
     #notify { "Checking user: $user ($props)": }
@@ -154,19 +154,23 @@ class local_users::add (
       # Make sure the specified group exists
       create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
       create_resources( user, { $user => $user_props }, $usr_defaults )
+      $owner_perm = $uid
+      $group_perm = $gid
     }
     # If the UID is not specified, let the system decide
     else {
       $user_props = $clean_props
       create_resources( user, { $user => $user_props }, $usr_defaults )
+      $owner_perm = $user
+      $group_perm = $user
     }
 
     # Make sure each user has a home directory
     file { "${user}home":
       ensure  => directory,
       path    => $home,
-      owner   => $uid,
-      group   => $gid,
+      owner   => $owner_perm,
+      group   => $group_perm,
       seluser => 'system_u',
       mode    => $mode,
       require => User[$user],

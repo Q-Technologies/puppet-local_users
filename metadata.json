@@ -1,10 +1,10 @@
 {
   "name": "qtechnologies/local_users",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "author": "Q-Technologies",
   "summary": "Puppet module to easily manage local users and their authorized keys",
   "license": "Apache-2.0",
-  "tags": ["users","accounts"],
+  "tags": ["users","accounts","groups","ssh_keys","sshkeys"],
   "source": "https://github.com/Q-Technologies/puppet-local_users.git",
   "project_page": "https://github.com/Q-Technologies/puppet-local_users",
   "issues_url": "https://github.com/Q-Technologies/puppet-local_users/issues",
@@ -33,12 +33,11 @@
     },
     {
       "operatingsystem": "SLES",
-      "operatingsystemrelease": [ 
+      "operatingsystemrelease": [
         "11",
         "12"
      ]
     }
-  ],
-  "data_provider": "hiera"
+  ]
 }
 
