@@ -151,8 +151,12 @@ class local_users::add (
       $user_props = merge( $clean_props,  { uid => $uid,
                                             gid => $gid,
                                           } )
-      # Make sure the specified group exists
-      create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
+      # Make sure the specified gid exists - must use exec as group resource only manages by name
+      #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
+      exec { "group $name": 
+        onlyif  => "/bin/grep -c :${gid}: /etc/group",
+        command => "/sbin/group --gid ${gid} ${name}",
+      }
       create_resources( user, { $user => $user_props }, $usr_defaults )
       $owner_perm = $uid
       $group_perm = $gid
