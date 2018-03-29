@@ -156,7 +156,7 @@ class local_users::add (
       #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
       exec { "group $name": 
         onlyif  => "/bin/grep -c :${gid}: /etc/group",
-        command => "/sbin/group --gid ${gid} ${name}",
+        command => "/sbin/groupadd --gid ${gid} ${name}",
       }
       create_resources( user, { $user => $user_props }, $usr_defaults )
       $owner_perm = $uid
