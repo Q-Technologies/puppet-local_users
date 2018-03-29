@@ -40,6 +40,7 @@ class local_users::add (
     #notify { "Checking user: $user ($props)": }
 
     $name = $user
+    $generate = $props[generate]
 
     # Make sure we have the UID - root's can be guessed
     if $props[uid] {
@@ -143,7 +144,7 @@ class local_users::add (
     }
 
     # Delete keys not understood by the user resource
-    $clean_props = delete( $merged_props3, ['auth_keys','mode'] )
+    $clean_props = delete( $merged_props3, ['auth_keys','mode','generate'] )
 
     # If a UID is specified, supply GID also
     if $uid {
