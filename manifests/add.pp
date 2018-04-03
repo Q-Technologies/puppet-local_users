@@ -155,7 +155,7 @@ class local_users::add (
         # We will zero pad according to the number of digits specified in the username
         $base_user = regsubst( $user, '^(.+)(\d+)$', '\1' )
         $base_num = regsubst( $user, '^(.+)(\d+)$', '\2' )
-        $num_length = length( $base_num )
+        $num_length = size( $base_num )
         $last_num = sprintf( "%0${num_length}d", $base_num + $generate - 1 )
         $last_user = "${base_user}${last_num}"
         $array_of_users = range( $user, $last_user )
