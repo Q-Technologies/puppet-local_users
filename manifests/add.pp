@@ -178,17 +178,21 @@ class local_users::add (
         $last_user = "${base_user}${last_num}"
         $range_of_users = range( $base_num, $last_num )
         $array_of_users = $range_of_users.map | $number | {
-          "${base_user}${number}" 
+          { base_user => $base_user, old_num => $base_num, new_num => sprintf( "%0${num_length}d", $number ) }
         }
 
       } else {
-        $array_of_users = [ $name ]
+        $array_of_users = [ { user => $name } ]
       }
 
       if $array_of_users =~ Array {
-        $array_of_users.each | $index, $user | {
+        $array_of_users.each | $index, $hash | {
           # Find the correct home directory location
           if $generate > 1 {
+            $base_user = $hash[base_user]
+            $old_num = $hash[old_num]
+            $new_num = $hash[new_num]
+            $user = "${base_user}${new_num}"
             if $base_dir {
               $user_home = "${$base_dir}/${user}"
             } else {
@@ -196,8 +200,13 @@ class local_users::add (
               $home_arr2 = $home_arr - $name + $user
               $user_home = join( $home_arr2, '/' )
             }
+            $gecos_arr = split( $props[comment], /\s+/ )
+            $gecos_arr2 = $gecos_arr - $old_num + $new_num
+            $gecos = join( $gecos_arr2, ' ' )
           } else {
+            $user = $hash[user]
             $user_home = $home
+            $gecos = $props[comment]
           }
 
           # If a UID is specified, supply GID also
@@ -206,6 +215,7 @@ class local_users::add (
             $user_props = merge( $clean_props,  { uid => ($uid + $index),
                                                   gid => $gid,
                                                   home => $user_home,
+                                                  comment => $gecos,
                                                 } )
             # Make sure the specified gid exists - must use exec as group resource only manages by name
             #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
@@ -219,7 +229,9 @@ class local_users::add (
           }
           # If the UID is not specified, let the system decide
           else {
-            $user_props = $clean_props
+            $user_props = merge( $clean_props,  { home => $user_home,
+                                                  comment => $gecos,
+                                                } )
             create_resources( user, { $user => $user_props }, $usr_defaults )
             $owner_perm = $user
             $group_perm = $user
