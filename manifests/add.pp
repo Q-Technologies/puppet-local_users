@@ -36,18 +36,21 @@ class local_users::add (
   $users = lookup( 'local_users::add::users', Data, 'deep', {} )
   $users_keys = lookup( 'local_users::add::keys', Collection, 'unique', [] )
 
-  $users.each | $user, $props | {
+  $users.each | $name, $props | {
     #notify { "Checking user: $user ($props)": }
 
-    $name = $user
-    $generate = $props[generate]
+    if $props[generate] {
+      $generate = $props[generate]
+    } else {
+      $generate = 1
+    }
 
     # Make sure we have the UID - root's can be guessed
     if $props[uid] {
       $uid = $props[uid]
     }
     else {
-      if $user == 'root' {
+      if $name == 'root' {
         $uid = 0
       }
       else {
@@ -64,15 +67,19 @@ class local_users::add (
     }
 
     # Make sure we have the home directory - root's can be guessed
-    if $props[home] {
+    if $props[base_dir] {
+      $base_dir = $props[base_dir]
+      $home = "${$base_dir}/$name"
+    } 
+    elsif $props[home] {
       $home = $props[home]
     }
     else {
-      if $user == 'root' {
+      if $name == 'root' {
           $home = $root_home_dir
       }
       else {
-          $home = "${user_home_location}/${user}"
+          $home = "${user_home_location}/${name}"
       }
     }
     # Find the mode of the home directory
@@ -88,11 +95,11 @@ class local_users::add (
       $comment = $props[comment]
     }
     else {
-      if $user == 'root' {
-        $comment = $user
+      if $name == 'root' {
+        $comment = $name
       }
       else {
-        fail( "The GECOS of user ${user} must be specified" )
+        fail( "The GECOS of user ${name} must be specified" )
       }
     }
 
@@ -144,7 +151,7 @@ class local_users::add (
     }
 
     # Delete keys not understood by the user resource
-    $clean_props = delete( $merged_props3, ['auth_keys','mode','generate'] )
+    $clean_props = delete( $merged_props3, ['auth_keys','mode','generate','base_dir'] )
 
     if $generate > 0 {
 
@@ -153,68 +160,98 @@ class local_users::add (
         # the range function from stdlib will generate the list of usernames - this will use
         # a leading zero as a number placeholder - e.g. user09, user10
         # We will zero pad according to the number of digits specified in the username
-        $base_user = regsubst( $user, '^(.+)(\d+)$', '\1' )
-        $base_num = regsubst( $user, '^(.+)(\d+)$', '\2' )
-        $num_length = size( $base_num )
+        $base_user = $name ? {
+          /^([^0-9]+)(\d+)$/ => "${1}",
+          /^([^0-9]+)$/      => "${1}",
+          default            => "",
+        }
+        $base_num = $name ? {
+          /^([^0-9]+)(\d+)$/ => "${2}",
+          /^(\d+)$/          => "${1}",
+          default            => "0",
+        }
+        # Need to resort to ERB as stdlib size function complains about the data type and the length function
+        # says it's not found even though it was added in a much earlier version of stdlib
+        #$num_length = size( "${base_num}" )
+        $num_length = inline_template("<%= @base_num.length %>") 
         $last_num = sprintf( "%0${num_length}d", $base_num + $generate - 1 )
         $last_user = "${base_user}${last_num}"
-        $array_of_users = range( $user, $last_user )
+        $range_of_users = range( $base_num, $last_num )
+        $array_of_users = $range_of_users.map | $number | {
+          "${base_user}${number}" 
+        }
 
       } else {
-        $array_of_users = [ $user ]
+        $array_of_users = [ $name ]
       }
 
-      $array_of_users.each | $index, $user | {
-        # If a UID is specified, supply GID also
-        if $uid {
-          # Merge our optimisations with the raw hiera data
-          $user_props = merge( $clean_props,  { uid => ($uid + $index),
-                                                gid => $gid,
-                                              } )
-          # Make sure the specified gid exists - must use exec as group resource only manages by name
-          #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
-          exec { "group $name": 
-            unless  => "/bin/grep -c :${gid}: /etc/group",
-            command => "/sbin/groupadd --gid ${gid} ${name}",
+      if $array_of_users =~ Array {
+        $array_of_users.each | $index, $user | {
+          # Find the correct home directory location
+          if $generate > 1 {
+            if $base_dir {
+              $user_home = "${$base_dir}/${user}"
+            } else {
+              $home_arr = split( $home, /\// )
+              $home_arr2 = $home_arr - $name + $user
+              $user_home = join( $home_arr2, '/' )
+            }
+          } else {
+            $user_home = $home
           }
-          create_resources( user, { $user => $user_props }, $usr_defaults )
-          $owner_perm = ($uid + $index)
-          $group_perm = $gid
-        }
-        # If the UID is not specified, let the system decide
-        else {
-          $user_props = $clean_props
-          create_resources( user, { $user => $user_props }, $usr_defaults )
-          $owner_perm = $user
-          $group_perm = $user
-        }
 
-        # Make sure each user has a home directory
-        file { "${user}home":
-          ensure  => directory,
-          path    => $home,
-          owner   => $owner_perm,
-          group   => $group_perm,
-          seluser => 'system_u',
-          mode    => $mode,
-          require => User[$user],
-        }
+          # If a UID is specified, supply GID also
+          if $uid {
+            # Merge our optimisations with the raw hiera data
+            $user_props = merge( $clean_props,  { uid => ($uid + $index),
+                                                  gid => $gid,
+                                                  home => $user_home,
+                                                } )
+            # Make sure the specified gid exists - must use exec as group resource only manages by name
+            #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
+            exec { "group $user": 
+              unless  => "/bin/grep -c :${gid}: /etc/group",
+              command => "/sbin/groupadd --gid ${gid} ${user}",
+            }
+            create_resources( user, { $user => $user_props }, $usr_defaults )
+            $owner_perm = ($uid + $index)
+            $group_perm = $gid
+          }
+          # If the UID is not specified, let the system decide
+          else {
+            $user_props = $clean_props
+            create_resources( user, { $user => $user_props }, $usr_defaults )
+            $owner_perm = $user
+            $group_perm = $user
+          }
 
-        # Add the specified SSH keys to the account
-        $keys = $props[auth_keys]
-        if $keys =~ Array {
-          $keys.each | $key | {
-            #notify { "Checking authorized keys for $user: $key": }
-            $users_keys.each | $user_key | {
-              $comment = $user_key[comment]
-              #notify { "Checking authorized keys for $user: $key ($comment)": }
-              if $comment == $key {
-                #notify { "Found authorized keys for $user: $key": }
-                ssh_authorized_key { "${comment} for ${user}":
-                  user    => $user,
-                  type    => $user_key['type'],
-                  key     => $user_key['key'],
-                  require => File["${user}home"],
+          # Make sure each user has a home directory
+          file { "${user}home":
+            ensure  => directory,
+            path    => $user_home,
+            owner   => $owner_perm,
+            group   => $group_perm,
+            seluser => 'system_u',
+            mode    => $mode,
+            require => User[$user],
+          }
+
+          # Add the specified SSH keys to the account
+          $keys = $props[auth_keys]
+          if $keys =~ Array {
+            $keys.each | $key | {
+              #notify { "Checking authorized keys for $user: $key": }
+              $users_keys.each | $user_key | {
+                $comment = $user_key[comment]
+                #notify { "Checking authorized keys for $user: $key ($comment)": }
+                if $comment == $key {
+                  #notify { "Found authorized keys for $user: $key": }
+                  ssh_authorized_key { "${comment} for ${user}":
+                    user    => $user,
+                    type    => $user_key['type'],
+                    key     => $user_key['key'],
+                    require => File["${user}home"],
+                  }
                 }
               }
             }
