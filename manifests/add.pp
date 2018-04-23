@@ -69,8 +69,8 @@ class local_users::add (
     # Make sure we have the home directory - root's can be guessed
     if $props[base_dir] {
       $base_dir = $props[base_dir]
-      $home = "${$base_dir}/$name"
-    } 
+      $home = "${$base_dir}/${name}"
+    }
     elsif $props[home] {
       $home = $props[home]
     }
@@ -161,19 +161,19 @@ class local_users::add (
         # a leading zero as a number placeholder - e.g. user09, user10
         # We will zero pad according to the number of digits specified in the username
         $base_user = $name ? {
-          /^([^0-9]+)(\d+)$/ => "${1}",
-          /^([^0-9]+)$/      => "${1}",
-          default            => "",
+          /^([^0-9]+)(\d+)$/ => $1,
+          /^([^0-9]+)$/      => $1,
+          default            => '',
         }
         $base_num = $name ? {
-          /^([^0-9]+)(\d+)$/ => "${2}",
-          /^(\d+)$/          => "${1}",
-          default            => "0",
+          /^([^0-9]+)(\d+)$/ => $2,
+          /^(\d+)$/          => $1,
+          default            => '0',
         }
         # Need to resort to ERB as stdlib size function complains about the data type and the length function
         # says it's not found even though it was added in a much earlier version of stdlib
         #$num_length = size( "${base_num}" )
-        $num_length = inline_template("<%= @base_num.length %>") 
+        $num_length = inline_template('<%= @base_num.length %>')
         $last_num = sprintf( "%0${num_length}d", $base_num + $generate - 1 )
         $last_user = "${base_user}${last_num}"
         $range_of_users = range( $base_num, $last_num )
@@ -219,7 +219,7 @@ class local_users::add (
                                                 } )
             # Make sure the specified gid exists - must use exec as group resource only manages by name
             #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
-            exec { "group $user": 
+            exec { "group ${user}":
               unless  => "/bin/grep -c :${gid}: /etc/group",
               command => "/sbin/groupadd --gid ${gid} ${user}",
             }
