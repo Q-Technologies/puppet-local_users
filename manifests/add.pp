@@ -33,8 +33,13 @@ class local_users::add (
   }
 
   # Then perform actions on users
-  $users = lookup( 'local_users::add::users', Data, 'deep', {} )
+  $users_lookup = lookup( 'local_users::add::users', Data, 'deep', {} )
   $users_keys = lookup( 'local_users::add::keys', Collection, 'unique', [] )
+
+  $users = $users_lookup ? {
+    Array   => merge(*flatten($users_lookup)),
+    default => $users_lookup
+  }
 
   $users.each | $name, $props | {
     #notify { "Checking user: $user ($props)": }
