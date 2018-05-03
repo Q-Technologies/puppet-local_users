@@ -37,7 +37,7 @@ class local_users::add (
   $users_keys = lookup( 'local_users::add::keys', Collection, 'unique', [] )
 
   $users = $users_lookup ? {
-    Array   => merge(*flatten($users_lookup)),
+    Array   => merge({}, {}, *flatten($users_lookup)),
     default => $users_lookup
   }
 
