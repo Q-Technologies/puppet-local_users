@@ -26,7 +26,11 @@ class local_users::add (
   }
 
   # Do group actions first
-  $groups = lookup( 'local_users::add::groups', Data, 'deep', {} )
+  $groups_lookup = lookup( 'local_users::add::groups', Data, 'deep', {} )
+  $groups = $groups_lookup ? {
+    Array   => merge({}, {}, *flatten($groups_lookup)),
+    default => $groups_lookup
+  }
 
   $groups.each | $group, $props | {
     create_resources( group, { $group => $props }, $grp_defaults )
