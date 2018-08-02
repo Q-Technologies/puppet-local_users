@@ -103,7 +103,18 @@ class local_users::add (
       }
     }
 
-    $groups = $props[groups]
+    #$groups = $props[groups]
+
+    # For AIX add prgp to groups
+    if $osfamily == "AIX" {
+        $pgrp = $facts['user_group'][$name]
+        $groups = $props[groups] + $pgrp
+    }
+    else
+    {
+        $groups = $props[groups]
+    }
+
 
     # Work around some platform idiosychronies
     case $facts['os']['family'] {
@@ -116,7 +127,8 @@ class local_users::add (
       }
       'AIX':  {
             $expiry_param = 'absent'
-            $groups_param = $groups << $name # Add the primary group as well - required for AIX
+#            $groups_param = $groups << $name # Add the primary group as well - required for AIX
+            $groups_param = $groups << $pgrp # Add the primary group as well - required for AIX
             $password_max_age = '0'
       }
       default:{
