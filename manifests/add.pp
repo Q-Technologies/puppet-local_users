@@ -127,7 +127,9 @@ class local_users::add (
       }
       'AIX':  {
             $expiry_param = 'absent'
-#            $groups_param = $groups << $name # Add the primary group as well - required for AIX
+#           $groups_param = $groups << $name # Add the primary group as well - required for AIX
+            # Need to obtain the primary group of the user
+            $pgrp = $facts['user_group'][$name]
             $groups_param = $groups << $pgrp # Add the primary group as well - required for AIX
             $password_max_age = '0'
       }
