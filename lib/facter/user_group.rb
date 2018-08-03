@@ -1,8 +1,12 @@
 Facter.add(:user_group) do
   setcode do
+    users = Array.new
+    File.open("/etc/passwd").each do |line|
+      next if line.match(/^\s|^#|^$/)
+      users << line.split(':').first
+    end
     user_group = {}
-    Facter.value(:local_users).each do |user|
-      #user_g = Facter::Core::Exec('/usr/bin/id -gn #{user}')
+    users.each do |user|
       user_g = Facter::Util::Resolution.exec("/usr/bin/id -gn #{user}")
       if user_g
         user_group[user] = user_g
@@ -11,5 +15,4 @@ Facter.add(:user_group) do
     user_group
   end
 end
-
 

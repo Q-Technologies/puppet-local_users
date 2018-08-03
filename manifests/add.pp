@@ -32,6 +32,10 @@ class local_users::add (
     create_resources( group, { $group => $props }, $grp_defaults )
   }
 
+  # For AIX, get prgp  for all local users
+  if $osfamily == "AIX" {
+        $users_pgrp = $facts['user_group']
+  }
   # Then perform actions on users
   $users = lookup( 'local_users::add::users', Data, 'deep', {} )
   $users_keys = lookup( 'local_users::add::keys', Collection, 'unique', [] )
@@ -103,18 +107,7 @@ class local_users::add (
       }
     }
 
-    #$groups = $props[groups]
-
-    # For AIX add prgp to groups
-    if $osfamily == "AIX" {
-        $pgrp = $facts['user_group'][$name]
-        $groups = $props[groups] + $pgrp
-    }
-    else
-    {
-        $groups = $props[groups]
-    }
-
+    $groups = $props[groups]
 
     # Work around some platform idiosychronies
     case $facts['os']['family'] {
@@ -129,7 +122,7 @@ class local_users::add (
             $expiry_param = 'absent'
 #           $groups_param = $groups << $name # Add the primary group as well - required for AIX
             # Need to obtain the primary group of the user
-            $pgrp = $facts['user_group'][$name]
+            $pgrp = $users_pgrp[$name]
             $groups_param = $groups << $pgrp # Add the primary group as well - required for AIX
             $password_max_age = '0'
       }
