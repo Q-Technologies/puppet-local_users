@@ -123,7 +123,14 @@ class local_users::add (
 #           $groups_param = $groups << $name # Add the primary group as well - required for AIX
             # Need to obtain the primary group of the user
             $pgrp = $users_pgrp[$name]
-            $groups_param = $groups << $pgrp # Add the primary group as well - required for AIX
+            if $pgrp { 
+               $groups_param = $groups << $pgrp # Add the primary group as well - required for AIX
+            }
+            else
+            {
+                # Avoid Puppet taking blank as undef  in mkuser command 
+                $groups_param = $groups 
+            }
             $password_max_age = '0'
       }
       default:{
