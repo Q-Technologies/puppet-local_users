@@ -1,0 +1,13 @@
+{
+  "description": "Clears (removes) the authorized_keys file for a user",
+  "input_method": "environment",
+  "implementations": [
+    {"name": "clear_auth_keys.pl"}
+  ],
+  "parameters": {
+    "username": {
+      "description": "The name of the user to clear the authorized_keys file for",
+      "type": "String[1]"
+    }
+  }
+}
