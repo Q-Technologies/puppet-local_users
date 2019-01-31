@@ -1,4 +1,5 @@
 Facter.add(:user_group) do
+  confine :kernel => 'AIX'
   setcode do
     users = Array.new
     File.open("/etc/passwd").each do |line|
