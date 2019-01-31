@@ -4,28 +4,29 @@
   "author": "Q-Technologies",
   "summary": "Puppet module to easily manage local users and their authorized keys",
   "license": "Apache-2.0",
-  "tags": ["users","accounts","groups","ssh_keys","sshkeys"],
   "source": "https://github.com/Q-Technologies/puppet-local_users.git",
   "project_page": "https://github.com/Q-Technologies/puppet-local_users",
   "issues_url": "https://github.com/Q-Technologies/puppet-local_users/issues",
-  "dependencies": [],
+  "dependencies": [
+
+  ],
   "operatingsystem_support": [
     {
-      "operatingsystem":"AIX",
+      "operatingsystem": "AIX",
       "operatingsystemrelease": [
         "6.1",
         "7.1"
       ]
     },
     {
-      "operatingsystem":"Debian",
+      "operatingsystem": "Debian",
       "operatingsystemrelease": [
         "7.0",
         "8.0"
       ]
     },
     {
-      "operatingsystem":"RedHat",
+      "operatingsystem": "RedHat",
       "operatingsystemrelease": [
         "6.0",
         "7.0"
@@ -36,8 +37,23 @@
       "operatingsystemrelease": [
         "11",
         "12"
-     ]
+      ]
     }
-  ]
+  ],
+  "requirements": [
+    {
+      "name": "puppet",
+      "version_requirement": ">= 4.7.0 < 7.0.0"
+    }
+  ],
+  "tags": [
+    "users",
+    "accounts",
+    "groups",
+    "ssh_keys",
+    "sshkeys"
+  ],
+  "pdk-version": "1.7.1",
+  "template-url": "file:///opt/puppetlabs/pdk/share/cache/pdk-templates.git",
+  "template-ref": "1.7.1-0-g810b982"
 }
-
