@@ -123,8 +123,14 @@ class local_users::add (
 #           $groups_param = $groups << $name # Add the primary group as well - required for AIX
             # Need to obtain the primary group of the user
             $pgrp = $users_pgrp[$name]
-            if $pgrp { 
-               $groups_param = $groups << $pgrp # Add the primary group as well - required for AIX
+            if $pgrp {
+               if !empty( $groups ) {
+                 $groups_param = $groups << $pgrp # Add the primary group existing groups - required for AIX
+               }
+               else
+               {
+                 $groups_param = $pgrp # Add the primary to groups - required for AIX
+               }
             }
             else
             {
@@ -233,9 +239,16 @@ class local_users::add (
                                                 } )
             # Make sure the specified gid exists - must use exec as group resource only manages by name
             #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
+            if $osfamily == "AIX" {
+                   $groupadd_cmd="mkgroup id="
+            }
+            else {
+                   $groupadd_cmd="groupadd --gid " 
+            }
             exec { "group ${user}":
+              path   => '/usr/bin:/usr/sbin:/bin:/sbin',
               unless  => "/bin/grep -c :${gid}: /etc/group",
-              command => "/sbin/groupadd --gid ${gid} ${user}",
+              command => "${groupadd_cmd}${gid} ${user}",
             }
             create_resources( user, { $user => $user_props }, $usr_defaults )
             $owner_perm = ($uid + $index)
