@@ -209,9 +209,9 @@ class local_users::add (
             $gecos = $props[comment]
           }
 
-          # If a password is being specified, make it the Secure data type to exclude from puppetdb reports
+          # If a password is being specified, make it the Sensitive data type to exclude from puppetdb reports
           if 'password' in $clean_props {
-            $secure_override = {'password' => Secure($clean_props['password'])}
+            $secure_override = {'password' => Sensitive($clean_props['password'])}
           } else {
             $secure_override = {}
           }
