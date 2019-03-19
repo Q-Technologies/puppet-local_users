@@ -1,3 +1,13 @@
 ---
+
+# Variables relevant to all actions
+local_users::managehome: true
+local_users::forcelocal: true
+
+# Variables relevant adding/maintaining users only
 local_users::add::root_home_dir: /root
 local_users::add::user_home_location: /home
+local_users::add::purge_ssh_keys: true
+local_users::add::group_auth_membership: true
+local_users::add::system_group: true
+local_users::add::user_group_membership: inclusive

@@ -3,6 +3,10 @@ class local_users::add (
   # Class parameters are populated from module hiera data
   String $root_home_dir,
   String $user_home_location,
+  Boolean $purge_ssh_keys,
+  Boolean $group_auth_membership,
+  Boolean $system_group,
+  String $user_group_membership,
 ) {
 
   include stdlib
@@ -11,30 +15,43 @@ class local_users::add (
   $grp_defaults = {
     ensure               => present,
     #allowdupe            => true,
-    system               => true,
-    auth_membership      => true,
-    forcelocal           => true,
+    system               => $system_group,
+    auth_membership      => $group_auth_membership,
+    forcelocal           => $local_users::forcelocal,
   }
 
   # Set up the defaults for the user resource creation
   $usr_defaults = {
     ensure               => present,
-    purge_ssh_keys       => true,
-    managehome           => false,
-    forcelocal           => true,
-    membership           => inclusive,
+    purge_ssh_keys       => $purge_ssh_keys,
+    managehome           => $local_users::managehome,
+    forcelocal           => $local_users::forcelocal,
+    membership           => $user_group_membership,
   }
 
   # Do group actions first
-  $groups = lookup( 'local_users::add::groups', Data, 'deep', {} )
+  $groups_lookup = lookup( 'local_users::add::groups', Data, 'deep', {} )
+  $groups = $groups_lookup ? {
+    Array   => merge({}, {}, *flatten($groups_lookup)),
+    default => $groups_lookup
+  }
 
   $groups.each | $group, $props | {
     create_resources( group, { $group => $props }, $grp_defaults )
   }
 
+  # For AIX, get prgp  for all local users
+  if $facts['osfamily'] == 'AIX' {
+        $users_pgrp = $facts['user_group']
+  }
   # Then perform actions on users
-  $users = lookup( 'local_users::add::users', Data, 'deep', {} )
+  $users_lookup = lookup( 'local_users::add::users', Data, 'deep', {} )
   $users_keys = lookup( 'local_users::add::keys', Collection, 'unique', [] )
+
+  $users = $users_lookup ? {
+    Array   => merge({}, {}, *flatten($users_lookup)),
+    default => $users_lookup
+  }
 
   $users.each | $name, $props | {
     #notify { "Checking user: $user ($props)": }
@@ -116,7 +133,21 @@ class local_users::add (
       }
       'AIX':  {
             $expiry_param = 'absent'
-            $groups_param = $groups << $name # Add the primary group as well - required for AIX
+#           $groups_param = $groups << $name # Add the primary group as well - required for AIX
+            # Need to obtain the primary group of the user
+            $pgrp = $users_pgrp[$name]
+            if $pgrp {
+              if !empty( $groups ) {
+                $groups_param = $groups << $pgrp # Add the primary group existing groups - required for AIX
+              }
+              else {
+                $groups_param = $pgrp # Add the primary to groups - required for AIX
+              }
+            }
+            else {
+                # Avoid Puppet taking blank as undef  in mkuser command 
+                $groups_param = $groups
+            }
             $password_max_age = '0'
       }
       default:{
@@ -228,9 +259,16 @@ class local_users::add (
                                                 )
             # Make sure the specified gid exists - must use exec as group resource only manages by name
             #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
+            if $facts['osfamily'] == 'AIX' {
+              $groupadd_cmd='mkgroup id='
+            }
+            else {
+              $groupadd_cmd='groupadd --gid '
+            }
             exec { "group ${user}":
+              path    => '/usr/bin:/usr/sbin:/bin:/sbin',
               unless  => "/bin/grep -c :${gid}: /etc/group",
-              command => "/sbin/groupadd --gid ${gid} ${user}",
+              command => "${groupadd_cmd}${gid} ${user}",
             }
             create_resources( user, { $user => $user_props }, $usr_defaults )
             $owner_perm = ($uid + $index)
