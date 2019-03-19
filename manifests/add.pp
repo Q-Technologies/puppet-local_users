@@ -3,6 +3,10 @@ class local_users::add (
   # Class parameters are populated from module hiera data
   String $root_home_dir,
   String $user_home_location,
+  Boolean $purge_ssh_keys,
+  Boolean $group_auth_membership,
+  Boolean $system_group,
+  String $user_group_membership,
 ) {
 
   include stdlib
@@ -11,18 +15,18 @@ class local_users::add (
   $grp_defaults = {
     ensure               => present,
     #allowdupe            => true,
-    system               => true,
-    auth_membership      => true,
-    forcelocal           => true,
+    system               => $system_group,
+    auth_membership      => $group_auth_membership,
+    forcelocal           => $local_users::forcelocal,
   }
 
   # Set up the defaults for the user resource creation
   $usr_defaults = {
     ensure               => present,
-    purge_ssh_keys       => true,
-    managehome           => false,
-    forcelocal           => true,
-    membership           => inclusive,
+    purge_ssh_keys       => $purge_ssh_keys,
+    managehome           => $local_users::managehome,
+    forcelocal           => $local_users::forcelocal,
+    membership           => $user_group_membership,
   }
 
   # Do group actions first
@@ -33,7 +37,7 @@ class local_users::add (
   }
 
   # For AIX, get prgp  for all local users
-  if $osfamily == "AIX" {
+  if $facts['osfamily'] == 'AIX' {
         $users_pgrp = $facts['user_group']
   }
   # Then perform actions on users
@@ -124,18 +128,16 @@ class local_users::add (
             # Need to obtain the primary group of the user
             $pgrp = $users_pgrp[$name]
             if $pgrp {
-               if !empty( $groups ) {
-                 $groups_param = $groups << $pgrp # Add the primary group existing groups - required for AIX
-               }
-               else
-               {
-                 $groups_param = $pgrp # Add the primary to groups - required for AIX
-               }
+              if !empty( $groups ) {
+                $groups_param = $groups << $pgrp # Add the primary group existing groups - required for AIX
+              }
+              else {
+                $groups_param = $pgrp # Add the primary to groups - required for AIX
+              }
             }
-            else
-            {
+            else {
                 # Avoid Puppet taking blank as undef  in mkuser command 
-                $groups_param = $groups 
+                $groups_param = $groups
             }
             $password_max_age = '0'
       }
@@ -239,14 +241,14 @@ class local_users::add (
                                                 } )
             # Make sure the specified gid exists - must use exec as group resource only manages by name
             #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
-            if $osfamily == "AIX" {
-                   $groupadd_cmd="mkgroup id="
+            if $facts['osfamily'] == 'AIX' {
+              $groupadd_cmd='mkgroup id='
             }
             else {
-                   $groupadd_cmd="groupadd --gid " 
+              $groupadd_cmd='groupadd --gid '
             }
             exec { "group ${user}":
-              path   => '/usr/bin:/usr/sbin:/bin:/sbin',
+              path    => '/usr/bin:/usr/sbin:/bin:/sbin',
               unless  => "/bin/grep -c :${gid}: /etc/group",
               command => "${groupadd_cmd}${gid} ${user}",
             }

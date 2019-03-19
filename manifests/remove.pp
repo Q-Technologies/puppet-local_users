@@ -14,14 +14,15 @@ class local_users::remove (
     }
     -> user { $user:
       ensure     => absent,
-      forcelocal => true,
+      forcelocal => $local_users::forcelocal,
+      managehome => $local_users::managehome,
     }
   }
 
   $groups_to_remove.each | $group | {
     group { $group:
       ensure     => absent,
-      forcelocal => true,
+      forcelocal => $local_users::forcelocal,
     }
   }
 }

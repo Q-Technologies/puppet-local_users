@@ -1,9 +1,9 @@
 Facter.add(:user_group) do
-  confine :kernel => 'AIX'
+  confine kernel: 'AIX'
   setcode do
-    users = Array.new
-    File.open("/etc/passwd").each do |line|
-      next if line.match(/^\s|^#|^$/)
+    users = []
+    File.open('/etc/passwd').each do |line|
+      next if line =~ %r{^(\s#\$)}
       users << line.split(':').first
     end
     user_group = {}
@@ -16,4 +16,3 @@ Facter.add(:user_group) do
     user_group
   end
 end
-
