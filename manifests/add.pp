@@ -26,15 +26,24 @@ class local_users::add (
   }
 
   # Do group actions first
-  $groups = lookup( 'local_users::add::groups', Data, 'deep', {} )
+  $groups_lookup = lookup( 'local_users::add::groups', Data, 'deep', {} )
+  $groups = $groups_lookup ? {
+    Array   => merge({}, {}, *flatten($groups_lookup)),
+    default => $groups_lookup
+  }
 
   $groups.each | $group, $props | {
     create_resources( group, { $group => $props }, $grp_defaults )
   }
 
   # Then perform actions on users
-  $users = lookup( 'local_users::add::users', Data, 'deep', {} )
+  $users_lookup = lookup( 'local_users::add::users', Data, 'deep', {} )
   $users_keys = lookup( 'local_users::add::keys', Collection, 'unique', [] )
+
+  $users = $users_lookup ? {
+    Array   => merge({}, {}, *flatten($users_lookup)),
+    default => $users_lookup
+  }
 
   $users.each | $name, $props | {
     #notify { "Checking user: $user ($props)": }

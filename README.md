@@ -13,6 +13,7 @@
   * [Adding Groups](#adding-groups)
   * [Removing Users](#removing-users)
   * [Removing Groups](#removing-groups)
+  * [Defining named sets of users](#defining-named-sets-of-users)
 * [Reference](#reference)
   * [Adding SSH Keys](#adding-ssh-keys-1)
   * [Adding Users](#adding-users-1)
@@ -182,6 +183,50 @@ Simply provide a list of groups to the hiera key:
 ```
 local_users::remove::groups: []
 ```
+
+### Defining named sets of users
+
+You can define named sets of users in your hiera data and refer to those sets when adding users to nodes.
+This way, you do not need to update hiera or manifest files in many locations when people or
+responsibilities change.
+
+Here's some example hiera data that defines a database of users and their properties under the key
+`local_users::staff`. Then, it makes named sets under the keys `local_users::department::developers` and
+`local_users::department::sysadmins`. Note that these keys have no particular meaning to the
+`local_users` module on their own, so at this point, we've simply defined some data:
+```yaml
+# common.yaml or similar
+local_users::staff:
+  mbaynton:
+    uid: 100
+    gid: 13779
+    comment: Mike Baynton
+  user2:
+    uid: 1234
+    gid: 13779
+    comment: Another user
+  thirdUser:
+    uid: 4567
+    gid: 13779
+    comment: A third user
+
+local_users::department::developers:
+  mbaynton: '%{alias("local_users::staff.mbaynton")}'
+  user2: '%{alias("local_users::staff.user2")}'
+local_users::department::sysadmins:
+  thirdUser: '%{alias("local_users::staff.thirdUser")}'
+```
+
+Now we can apply our named sets to nodes as desired by assigning them to the `local_users::add::users` key (which
+_does_ have special meaning to the `local_users` module):
+```yaml
+# node1.my.org.yaml or similar
+local_users::add::users:
+  - '%{alias("local_users::department::developers")}'
+  - '%{alias("local_users::department::sysadmins")}'
+```
+
+This concept can even be extended to create named sets that contain nested named sets.
 
 ## Reference
 
