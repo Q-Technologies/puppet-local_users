@@ -240,6 +240,13 @@ class local_users::add (
             $gecos = $props[comment]
           }
 
+          # If a password is being specified, make it the Sensitive data type to exclude from puppetdb reports
+          if 'password' in $clean_props {
+            $secure_override = {'password' => Sensitive($clean_props['password'])}
+          } else {
+            $secure_override = {}
+          }
+
           # If a UID is specified, supply GID also
           if $uid {
             # Merge our optimisations with the raw hiera data
@@ -247,7 +254,9 @@ class local_users::add (
                                                   gid => $gid,
                                                   home => $user_home,
                                                   comment => $gecos,
-                                                } )
+                                                },
+                                                $secure_override,
+                                                )
             # Make sure the specified gid exists - must use exec as group resource only manages by name
             #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
             if $facts['osfamily'] == 'AIX' {
@@ -269,7 +278,9 @@ class local_users::add (
           else {
             $user_props = merge( $clean_props,  { home => $user_home,
                                                   comment => $gecos,
-                                                } )
+                                                },
+                                                $secure_override,
+                                                )
             create_resources( user, { $user => $user_props }, $usr_defaults )
             $owner_perm = $user
             $group_perm = $user

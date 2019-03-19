@@ -1,0 +1,4 @@
+---
+local_users::add::users:
+  root:
+    password: $6$/dBBM855e2zWLTa6$YiP9qjLYyDyMiBnDRg9Buxg4xKcmOFqCx6zYbd4HaJthZ92ybpUTIu8vcZw63wvngutvD7vHjuYldIa/ktAK6/

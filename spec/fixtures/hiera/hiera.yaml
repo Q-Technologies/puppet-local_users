@@ -1,0 +1,11 @@
+version: 5
+defaults:
+  datadir: '.'
+  data_hash: yaml_data
+hierarchy:
+  - name: Per-node test data
+    path: "%{trusted.certname}.yaml"
+  - name: rspec test data
+    path: common.yaml
+  - name: production data
+    path: ../../../data/common.yaml
