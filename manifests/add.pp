@@ -258,6 +258,8 @@ class local_users::add (
                                                 $secure_override,
                                                 )
             # Make sure the specified gid exists - must use exec as group resource only manages by name
+            # We only want to do this if the GID has been specified as numeric - if it is text then
+            # we assume it already exists
             #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
             if $facts['osfamily'] == 'AIX' {
               $groupadd_cmd='mkgroup id='
@@ -265,10 +267,13 @@ class local_users::add (
             else {
               $groupadd_cmd='groupadd --gid '
             }
-            exec { "group ${user}":
-              path    => '/usr/bin:/usr/sbin:/bin:/sbin',
-              unless  => "/bin/grep -c :${gid}: /etc/group",
-              command => "${groupadd_cmd}${gid} ${user}",
+
+            if ${gid} =~ /^\d+$/ {
+              exec { "group ${user}":
+                path    => '/usr/bin:/usr/sbin:/bin:/sbin',
+                unless  => "/bin/grep -c :${gid}: /etc/group",
+                command => "${groupadd_cmd}${gid} ${user}",
+              }
             }
             create_resources( user, { $user => $user_props }, $usr_defaults )
             $owner_perm = ($uid + $index)
