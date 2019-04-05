@@ -268,7 +268,7 @@ class local_users::add (
               $groupadd_cmd='groupadd --gid '
             }
 
-            if ${gid} =~ /^\d+$/ {
+            if $gid =~ /^\d+$/ {
               exec { "group ${user}":
                 path    => '/usr/bin:/usr/sbin:/bin:/sbin',
                 unless  => "/bin/grep -c :${gid}: /etc/group",
