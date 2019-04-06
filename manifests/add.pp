@@ -312,12 +312,25 @@ class local_users::add (
                 #notify { "Checking authorized keys for $user: $key ($comment)": }
                 if $comment == $key {
                   #notify { "Found authorized keys for $user: $key": }
-                  ssh_authorized_key { "${comment} for ${user}":
+                  $sak1 = {
                     user    => $user,
                     type    => $user_key['type'],
                     key     => $user_key['key'],
                     require => File["${user}home"],
                   }
+                  if $user_key['target'] {
+                    $sak2 = merge( $sak1, { options =>  $user_key['target'] } )
+                  }
+                  else {
+                    $sak2 = $sak1
+                  }
+                  if $user_key['options'] {
+                    $sak3 = merge( $sak2, { options =>  $user_key['options'] } )
+                  }
+                  else {
+                    $sak3 = $sak2
+                  }
+                  create_resources( ssh_authorized_key, { "${comment} for ${user}" => $sak3 }, {} )
                 }
               }
             }
