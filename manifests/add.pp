@@ -319,7 +319,7 @@ class local_users::add (
                     require => File["${user}home"],
                   }
                   if $user_key['target'] {
-                    $sak2 = merge( $sak1, { options =>  $user_key['target'] } )
+                    $sak2 = merge( $sak1, { target =>  $user_key['target'] } )
                   }
                   else {
                     $sak2 = $sak1
