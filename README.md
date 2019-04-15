@@ -65,16 +65,14 @@ Create a list of SSH keys that will be references later (consumed) when setting 
 
 ```
 local_users::add::keys:
-  -
-    comment: 'jblogs@imac.local'
+  - comment: 'jblogs@imac.local'
     type: ssh-rsa 
     key: 'AAAAB3NzaC1yc2EAAAABIwAAAQEArqFOapIoElAmJBlKq74MdlXQjPZ2xqOZ7xo2UZ4sRD4fRh+kgkfOP0+wius71pIJ2N2n7cgP1QWMP1i7xsvFJBnb+up9P0y93WTnf+wjKMNx3b9Xt43AffXAADegkWnaImIY+nVrqC1fOiq8xyDjT+kq5ItdE+QHaBNlsuP/FCSGQB8hhxOQyqwKsALdhedhZZ9MsCuVqf62Zti+V3CujyKwRuyeZa3f8zMLjjRFXXldxMVFMJv3/PbJNvMSGe38ikI6Dz/1ESJbNHJFcN+3sM6yzHWS1MROfW6jdxDEtvNgccirDDKUzmeA6wzGnHiDAqf/iJn/x4DUBdijROxE1Q=='
-  -
-    comment: 'root@prd009'
+  - comment: 'root@prd009'
     type: ssh-rsa
     key: 'AAAAB3NzaC1yc2EAAAAdaqabaaabaqcHyTOwUqmD5evjpDdqyOaR7DISjHa4hu5vwIjg1IecduOZ9Mx00St6emeGwIjMWIapLwaWmTds3DnrON+lFCmMXYPhgIZJpJ4JrxJevMNFXZObS+TdSRwsCo9nuehA9Y1+NPMEPFdtcwdBRSjxDwCbuHzgTYo+hS2Wzwz4B2KjGFvFKx6IlK9qKx7B31n5O4bJMSJLsw+BPe/4xqzDUHjBpcXPPOP+4TWZzhXqZCdXalQZkhxLEC4jHTVycPvpyd3fHr3LOGThpc2ldnh8JAJz71sA01AquErQXa1/pFRl6dGbCZLRuHU8flMj8dA4ZZWCU06cboAkCgxYifTwB8Dd'
-  -
-    comment: 'bsmith@linux-9g92.site'
+    options: 'from="10.X.X.X"'
+  - comment: 'bsmith@linux-9g92.site'
     type: ssh-rsa
     key: 'AAAAB3NzaC1yc2EAAAADAQABAAABAQDFcGZD9nyS34Q4olunx2UgN3XKmZqQT2CeKNiuA2/KJkscty9tWP4cG4syEGY21ws3YL11KLYlI1oH4r2qiBk/AdyKhqpo10sCdCuOVAA+kXK7UQGyAjjwlkCLMYkofjEc5iauz1E6d9UOyrtSMnWZ+B59tq5Kd5zPMXAG1MrzWRO4bB2LwT82HaxXKdoon3VCB7jnXKMYQkj1o890HFp/RA1r4B+EBMDf6Op6iSsQsZGG4607Qvhrf8mfeJbSJiK3FezbO7i2hbIyqfzTNaDgzAexJNpsO/67nlytLs9w2Sx7npdp8faMECPQU0DW31e2UckXgDN43edYpYlNNV/N'
 ```
