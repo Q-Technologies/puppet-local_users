@@ -30,7 +30,7 @@ class local_users::add (
   }
 
   # Do group actions first
-  $groups_lookup = lookup( 'local_users::add::groups', Data, 'deep', {} )
+  $groups_lookup = $local_users::groups_to_add
   $groups = $groups_lookup ? {
     Array   => merge({}, {}, *flatten($groups_lookup)),
     default => $groups_lookup
@@ -45,8 +45,8 @@ class local_users::add (
         $users_pgrp = $facts['user_group']
   }
   # Then perform actions on users
-  $users_lookup = lookup( 'local_users::add::users', Data, 'deep', {} )
-  $users_keys = lookup( 'local_users::add::keys', Collection, 'unique', [] )
+  $users_lookup = $local_users::users_to_add
+  $users_keys = $local_users::users_keys
 
   $users = $users_lookup ? {
     Array   => merge({}, {}, *flatten($users_lookup)),

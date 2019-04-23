@@ -3,8 +3,11 @@ class local_users::remove (
   # Class parameters are populated from module hiera data
 ) {
 
-  $users_to_remove = lookup('local_users::remove::users', Collection, 'unique', [])
-  $groups_to_remove = lookup('local_users::remove::groups', Collection, 'unique', [])
+  $users_to_add_list = keys( $local_users::users_to_add )
+  $groups_to_add_list = keys( $local_users::groups_to_add )
+
+  $users_to_remove = $local_users::users_to_remove - $users_to_add_list
+  $groups_to_remove = $local_users::groups_to_remove - $groups_to_add_list
 
   $users_to_remove.each | $user | {
     exec { "killing ${user}":
