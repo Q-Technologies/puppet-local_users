@@ -3,18 +3,8 @@ class local_users::remove (
   # Class parameters are populated from module hiera data
 ) {
 
-  if empty( $local_users::users_to_add ) {
-    $users_to_add_list = []
-  }
-  else {
-    $users_to_add_list = keys( $local_users::users_to_add )
-  }
-  if empty( $local_users::groups_to_add ) {
-    $groups_to_add_list = []
-  }
-  else {
-    $groups_to_add_list = keys( $local_users::groups_to_add )
-  }
+  $users_to_add_list = keys( $local_users::users_to_add )
+  $groups_to_add_list = keys( $local_users::groups_to_add )
 
   if !empty( $local_users::users_to_remove ) {
     $users_to_remove = $local_users::users_to_remove - $users_to_add_list
