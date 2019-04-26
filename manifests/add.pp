@@ -264,13 +264,11 @@ class local_users::add (
                                                 )
             if $fix_user_perms {
               # Fix the permissions of the user's file in their home directory if the user already exists and their UID is changing
-              # Technically this needs to only happen before the user create resources is run, but it's a lot easier to specify the 
-              # group Exec
               exec { "chown ${user}":
                 path    => '/usr/bin:/usr/sbin:/bin:/sbin',
                 onlyif  => "id ${user} && perl -e '\$u = getpwnam(${user}); if( \$u and \$u ne ${new_uid} ){ exit 0} else { exit 1 }'",
                 command => "find $user_home -uid $(perl -e '\$u = getpwnam(${user}); print \$u') | xargs chown ${new_uid} 2>/dev/null || echo ok",
-                before  => Exec["group ${user}"],
+                before  => User[$user],
               }
             }
 
@@ -297,6 +295,7 @@ class local_users::add (
                 path    => '/usr/bin:/usr/sbin:/bin:/sbin',
                 unless  => "/bin/grep -c :${gid}: /etc/group",
                 command => $groupadd_cmd,
+                before  => User[$user],
               }
 
               if $force_group_gid_fix and $fix_user_perms {
