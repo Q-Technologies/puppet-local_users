@@ -17,6 +17,7 @@
 * [Reference](#reference)
   * [Adding SSH Keys](#adding-ssh-keys-1)
   * [Adding Users](#adding-users-1)
+    * [Updating file permssions](#updating-file-permssions)
     * [Password expiry](#password-expiry)
   * [Adding Groups](#adding-groups-1)
   * [Removing Users](#removing-users-1)
@@ -47,9 +48,10 @@ It is designed to be driven by hiera, not so much through code.
 
 ### What local_users affects
 
-  * `/etc/passwd`, `/etc/shadow` and `/etc/group` mostly through the Puppet user and group resources, but does user `groupadd` command in certain circumstance
+  * `/etc/passwd`, `/etc/shadow` and `/etc/group` mostly through the Puppet user and group resources, but does use the low level commands in certain circumstances.
   * user home directories
   * users' authorized keys
+  * permissions of files in users' home directories may be updated to match a new UID and/or GID (but only if explicity enabled)
 
 ### Setup Requirements
   * Nothing beyond Puppet and stdlib.
@@ -254,7 +256,15 @@ All Puppet user resource fields are supported, plus these additional ones:
   * `base_dir` - the directory where the user's home directory with be created within
   * `generate` - the number of similar users to create.  I.e. 10 wil create 10 users.  Each user will be numbered sequentially and if the UID is specified, it will also be incremented.
 
-If the GID of the user does not correspond to an existing group, a new one will be created named after the user.
+If the GID of the user does not correspond to an existing group, a new one will be created named after the user. 
+
+If an existing group has the same name but a different GID then Puppet will throw an error saying it is unable to match the group.  This can be fixed by setting `local_users::add::force_group_gid_fix`
+to `true` - this will change the GID of the group matching the name with the required GID.  This is not enabled by default.
+
+#### Updating file permssions
+
+When `local_users::add::fix_file_perms` is set to `true` and the UID/GID of the user is changing, any files in the home directory of the user matching the old UID/GID will be updated to the new UID/GID.
+This is not enabled by default.
 
 #### Password expiry
 
@@ -274,10 +284,8 @@ before the removal is attempted.
 Groups being removed will simply be removed with the Puppet group resource.
 
 ## Issues
-Only tested on UNIX/Linux type systems.  I don't always have access to AIX, so sometimes it breaks.
+Only tested on UNIX/Linux type systems.  It does require a working perl 5, but only the core modules.  I don't always have access to AIX, so sometimes it breaks.
 
 Since version 1.0.1 of this module duplicate GIDs will not be forced through.  This will create an issue if you have previously relied on this behaviour.
-
-This module does not check for the existance of the users groups first - which might mean a duplicate is created rather than failing.
 
 Since version 1.1.0 it requires Puppet 4 and above (hiera functions were replaced with lookup) and internal hiera was converted to version 5

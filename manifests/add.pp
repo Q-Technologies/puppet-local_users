@@ -7,26 +7,30 @@ class local_users::add (
   Boolean $group_auth_membership,
   Boolean $system_group,
   String $user_group_membership,
+  # Force the fixing of the GID to match UID when a group is based on the users name
+  Boolean $force_group_gid_fix,
+  # Whether to modify the permissions of the files in the user's home directory
+  Boolean $fix_user_perms,
 ) {
 
   include stdlib
 
   # Set up the defaults for the group resource creation
   $grp_defaults = {
-    ensure               => present,
-    #allowdupe            => true,
-    system               => $system_group,
-    auth_membership      => $group_auth_membership,
-    forcelocal           => $local_users::forcelocal,
+    ensure          => present,
+    #allowdupe      => true,
+    system          => $system_group,
+    auth_membership => $group_auth_membership,
+    forcelocal      => $local_users::forcelocal,
   }
 
   # Set up the defaults for the user resource creation
   $usr_defaults = {
-    ensure               => present,
-    purge_ssh_keys       => $purge_ssh_keys,
-    managehome           => $local_users::managehome,
-    forcelocal           => $local_users::forcelocal,
-    membership           => $user_group_membership,
+    ensure         => present,
+    purge_ssh_keys => $purge_ssh_keys,
+    managehome     => $local_users::managehome,
+    forcelocal     => $local_users::forcelocal,
+    membership     => $user_group_membership,
   }
 
   # Do group actions first
@@ -250,30 +254,65 @@ class local_users::add (
           # If a UID is specified, supply GID also
           if $uid {
             # Merge our optimisations with the raw hiera data
-            $user_props = merge( $clean_props,  { uid => ($uid + $index),
+            $new_uid = $uid + $index
+            $user_props = merge( $clean_props,  { uid => $new_uid,
                                                   gid => $gid,
                                                   home => $user_home,
                                                   comment => $gecos,
                                                 },
                                                 $secure_override,
                                                 )
-            # Make sure the specified gid exists - must use exec as group resource only manages by name
-            # We only want to do this if the GID has been specified as numeric - if it is text then
-            # we assume it already exists
-            #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
-            if $facts['osfamily'] == 'AIX' {
-              $groupadd_cmd='mkgroup id='
-            }
-            else {
-              $groupadd_cmd='groupadd --gid '
+            if $fix_user_perms {
+              # Fix the permissions of the user's file in their home directory if the user already exists and their UID is changing
+              # Technically this needs to only happen before the user create resources is run, but it's a lot easier to specify the 
+              # group Exec
+              exec { "chown ${user}":
+                path    => '/usr/bin:/usr/sbin:/bin:/sbin',
+                onlyif  => "id ${user} && perl -e '\$u = getpwnam(${user}); if( \$u and \$u ne ${new_uid} ){ exit 0} else { exit 1 }'",
+                command => "find $user_home -uid $(perl -e '\$u = getpwnam(${user}); print \$u') | xargs chown ${new_uid} 2>/dev/null || echo ok",
+                before  => Exec["group ${user}"],
+              }
             }
 
             if "${gid}" =~ /^\d+$/ {
+              # Make sure the specified gid exists - must use exec as group resource only manages by name
+              # Perhaps this should be converted to a resource to provide better reporting of what wants to happen (has happened)
+              # We only want to do this if the GID has been specified as numeric - if it is text then
+              # we assume it already exists
+              #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
+              if $facts['osfamily'] == 'AIX' {
+                $groupadd_cmd="mkgroup id=${gid} ${user}"
+              }
+              else {
+                if $force_group_gid_fix {
+                  # We try to add the group - but if it exists we need to manually edit the group file with the new gid
+                  $groupadd_cmd="groupadd --gid ${gid} ${user} 2>/dev/null || perl -pe 's/^(${user}):(.*):\d+:/\$1:\$2:${gid}:/' -i /etc/group"
+                } else {
+                  # We try to add the group
+                  $groupadd_cmd="groupadd --gid ${gid} ${user}"
+                }
+              }
+
               exec { "group ${user}":
                 path    => '/usr/bin:/usr/sbin:/bin:/sbin',
                 unless  => "/bin/grep -c :${gid}: /etc/group",
-                command => "${groupadd_cmd}${gid} ${user}",
+                command => $groupadd_cmd,
               }
+
+              if $force_group_gid_fix and $fix_user_perms {
+                # Also, need to fix the permissions of the files in the home directory if we are changing the GID
+                # Only perform this before the group GID has been fixed - otherwise we can't find out the old GID
+                # The test needs to check if the user exists and that the GID exists, but is different to what is intended
+                # We perform a find for files matching the old GID.  (we don't care if xargs fails, as it will generally mean
+                # there are no matching files)
+                exec { "chgrp ${user}":
+                  path    => '/usr/bin:/usr/sbin:/bin:/sbin',
+                  onlyif  => "id ${user} && perl -e '\$g = getgrnam(${user}); if( \$g and \$g ne ${gid} ){ exit 0} else { exit 1 }'",
+                  command => "find $user_home -gid $(perl -e '\$g = getgrnam(${user}); print \$g') | xargs chgrp ${gid} 2>/dev/null || echo ok",
+                  before  => Exec["group ${user}"],
+                }
+              }
+
             }
             create_resources( user, { $user => $user_props }, $usr_defaults )
             $owner_perm = ($uid + $index)

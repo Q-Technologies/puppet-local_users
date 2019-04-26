@@ -11,3 +11,5 @@ local_users::add::purge_ssh_keys: true
 local_users::add::group_auth_membership: true
 local_users::add::system_group: true
 local_users::add::user_group_membership: inclusive
+local_users::add::force_group_gid_fix: false
+local_users::add::fix_user_perms: false
