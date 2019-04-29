@@ -6,7 +6,7 @@ class local_users::remove (
   $users_to_add_list = keys( $local_users::users_to_add )
   $groups_to_add_list = keys( $local_users::groups_to_add )
 
-  $users_to_remove = $local_users::users_to_remove - $users_to_add_list
+  $users_to_remove = $local_users::users_to_remove - $local_users::users_to_ignore - $users_to_add_list
   $users_to_remove.each | $user | {
     exec { "killing ${user}":
       command => "pkill -9 -u ${user}",
@@ -20,7 +20,7 @@ class local_users::remove (
     }
   }
 
-  $groups_to_remove = $local_users::groups_to_remove - $groups_to_add_list
+  $groups_to_remove = $local_users::groups_to_remove - $local_users::groups_to_ignore - $groups_to_add_list
   $groups_to_remove.each | $group | {
     group { $group:
       ensure     => absent,

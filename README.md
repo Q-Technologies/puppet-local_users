@@ -81,7 +81,9 @@ local_users::add::keys:
     key: 'AAAAB3NzaC1yc2EAAAADAQABAAABAQDFcGZD9nyS34Q4olunx2UgN3XKmZqQT2CeKNiuA2/KJkscty9tWP4cG4syEGY21ws3YL11KLYlI1oH4r2qiBk/AdyKhqpo10sCdCuOVAA+kXK7UQGyAjjwlkCLMYkofjEc5iauz1E6d9UOyrtSMnWZ+B59tq5Kd5zPMXAG1MrzWRO4bB2LwT82HaxXKdoon3VCB7jnXKMYQkj1o890HFp/RA1r4B+EBMDf6Op6iSsQsZGG4607Qvhrf8mfeJbSJiK3FezbO7i2hbIyqfzTNaDgzAexJNpsO/67nlytLs9w2Sx7npdp8faMECPQU0DW31e2UckXgDN43edYpYlNNV/N'
 ```
 
-Define any groups that will be required for the users.  Also delete some unnecessary groups.
+Define any groups that will be required for the users.  Also delete some unnecessary groups or ignore some groups 
+(i.e. don't remove them even if they are specified for removal in a more general scope, but they also don't need to 
+be fully defined through the 'add' data).
 
 ```
 local_users::add::groups:
@@ -93,10 +95,15 @@ local_users::remove::groups:
   - thesmiths
   - builders
 
+local_users::ignore::groups:
+  - ftp
+  - root
+
 ```
 
-Define some users, consuming both the SSH keys and groups previously specifed.  Also, delete some
-redundant users.
+Define some users, consuming both the SSH keys and groups previously specifed.  Also, delete some redundant users or ignore others 
+(i.e. don't remove them even if they are specified for removal in a more general scope, but they also don't need to 
+be fully defined through the 'add' data).
 
 
 ```
@@ -128,6 +135,11 @@ local_users::add::users:
 local_users::remove::users:
   - jsmith
   - bob
+
+local_users::ignore::users:
+  - ftp
+  - root
+
 ```
 
 ## Usage
