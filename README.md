@@ -136,11 +136,17 @@ local_users::remove::users:
   - jsmith
   - bob
 
+local_users::remove::sysusers:
+  - games
+  - shutdown
+
 local_users::ignore::users:
   - ftp
   - root
 
 ```
+
+The `local_users::remove::sysusers` hash will not try to remove the home directory regardless of the global `managehome` setting.
 
 ## Usage
 

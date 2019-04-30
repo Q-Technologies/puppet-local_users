@@ -5,6 +5,7 @@ class local_users(
   Boolean $forcelocal,
 ) {
   $users_to_remove = lookup('local_users::remove::users', Collection, 'unique', [])
+  $sysusers_to_remove = lookup('local_users::remove::sysusers', Collection, 'unique', [])
   $groups_to_remove = lookup('local_users::remove::groups', Collection, 'unique', [])
   $users_to_ignore = lookup('local_users::ignore::users', Collection, 'unique', [])
   $groups_to_ignore = lookup('local_users::ignore::groups', Collection, 'unique', [])
