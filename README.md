@@ -146,7 +146,7 @@ local_users::ignore::users:
 
 ```
 
-The `local_users::remove::sysusers` hash will not try to remove the home directory regardless of the global `managehome` setting.
+The `local_users::remove::sysusers` collection will not try to remove the home directory regardless of the global `managehome` setting.
 
 ## Usage
 
