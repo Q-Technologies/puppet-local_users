@@ -267,7 +267,7 @@ class local_users::add (
               exec { "chown ${user}":
                 path    => '/usr/bin:/usr/sbin:/bin:/sbin',
                 onlyif  => "id ${user} && perl -e '\$u = getpwnam(${user}); if( \$u and \$u ne ${new_uid} ){ exit 0} else { exit 1 }'",
-                command => "find ${user_home} -uid $(perl -e '\$u = getpwnam(${user}); print \$u') \
+                command => "find ${user_home} -user $(perl -e '\$u = getpwnam(${user}); print \$u') \
                             | xargs chown ${new_uid} 2>/dev/null || echo ok",
                 before  => User[$user],
               }
@@ -309,7 +309,7 @@ class local_users::add (
                 exec { "chgrp ${user}":
                   path    => '/usr/bin:/usr/sbin:/bin:/sbin',
                   onlyif  => "id ${user} && perl -e '\$g = getgrnam(${user}); if( \$g and \$g ne ${gid} ){ exit 0} else { exit 1 }'",
-                  command => "find ${user_home} -gid $(perl -e '\$g = getgrnam(${user}); print \$g') \
+                  command => "find ${user_home} -group $(perl -e '\$g = getgrnam(${user}); print \$g') \
                               | xargs chgrp ${gid} 2>/dev/null || echo ok",
                   before  => Exec["group ${user}"],
                 }
