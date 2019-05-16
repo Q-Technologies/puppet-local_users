@@ -54,7 +54,8 @@ It is designed to be driven by hiera, not so much through code.
   * permissions of files in users' home directories may be updated to match a new UID and/or GID (but only if explicity enabled)
 
 ### Setup Requirements
-  * Nothing beyond Puppet and stdlib.
+  * The stdlib module
+  * It does presume there is a basic system perl installed on systems being managed
 
 ### Beginning with local_users
 
@@ -63,7 +64,7 @@ Include the class in your code:
   class { 'local_users': }
 ```
 
-Create a list of SSH keys that will be references later (consumed) when setting up local users:
+Create a list of SSH keys that will be referenced later (i.e. consumed) when setting up local users:
 
 ```
 local_users::add::keys:
@@ -146,7 +147,11 @@ local_users::ignore::users:
 
 ```
 
-The `local_users::remove::sysusers` collection will not try to remove the home directory regardless of the global `managehome` setting.
+**Important**
+
+The `local_users::remove::sysusers` collection will not try to remove the home directory regardless of the global `managehome` setting.  If a system
+user is specified for removal in `local_users::remove::users` and `managehome` is also set to `true` then the home directory will be removed (or attempted 
+at least) - e.g. `/root`, `/sbin`, etc. - which will corrupt your systems! (i.e. delete critical binaries).
 
 ## Usage
 

@@ -266,8 +266,8 @@ class local_users::add (
               # Fix the permissions of the user's file in their home directory if the user already exists and their UID is changing
               exec { "chown ${user}":
                 path    => '/usr/bin:/usr/sbin:/bin:/sbin',
-                onlyif  => "id ${user} && perl -e '\$u = getpwnam(${user}); if( \$u and \$u ne ${new_uid} ){ exit 0} else { exit 1 }'",
-                command => "find ${user_home} -user $(perl -e '\$u = getpwnam(${user}); print \$u') \
+                onlyif  => "id ${user} && perl -e '\$u = getpwnam(\"${user}\"); if( \$u and \$u ne ${new_uid} ){ exit 0} else { exit 1 }'",
+                command => "find ${user_home} -user $(perl -e '\$u = getpwnam(\"${user}\"); print \$u') \
                             | xargs chown ${new_uid} 2>/dev/null || echo ok",
                 before  => User[$user],
               }
@@ -300,7 +300,7 @@ class local_users::add (
                 before  => User[$user],
               }
 
-              if $force_group_gid_fix and $fix_user_perms {
+              if $fix_user_perms {
                 # Also, need to fix the permissions of the files in the home directory if we are changing the GID
                 # Only perform this before the group GID has been fixed - otherwise we can't find out the old GID
                 # The test needs to check if the user exists and that the GID exists, but is different to what is intended
@@ -308,8 +308,8 @@ class local_users::add (
                 # there are no matching files)
                 exec { "chgrp ${user}":
                   path    => '/usr/bin:/usr/sbin:/bin:/sbin',
-                  onlyif  => "id ${user} && perl -e '\$g = getgrnam(${user}); if( \$g and \$g ne ${gid} ){ exit 0} else { exit 1 }'",
-                  command => "find ${user_home} -group $(perl -e '\$g = getgrnam(${user}); print \$g') \
+                  onlyif  => "id ${user} && perl -e '@g = getpwnam(\"${user}\"); if( @g and \$g[3] ne ${gid} ){ exit 0} else { exit 1 }'",
+                  command => "find ${user_home} -group $(perl -e '@g = getpwnam(\"${user}\"); print \$g[3]') \
                               | xargs chgrp ${gid} 2>/dev/null || echo ok",
                   before  => Exec["group ${user}"],
                 }
