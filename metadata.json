@@ -1,7 +1,7 @@
 {
   "name": "qtechnologies-local_users",
 
-  "version": "1.3.2",
+  "version": "1.4.0",
   "author": "Q-Technologies",
   "summary": "Puppet module to easily manage local users and their authorized keys",
   "license": "Apache-2.0",
