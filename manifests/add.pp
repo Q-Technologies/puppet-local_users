@@ -273,9 +273,10 @@ class local_users::add (
               }
             }
 
+            # We need to force $gid to string to perform regex even though PDK complains
             if "${gid}" =~ /^\d+$/ {
               # Make sure the specified gid exists - must use exec as group resource only manages by name
-              # Perhaps this should be converted to a resource to provide better reporting of what wants to happen (has happened)
+              # Perhaps this should be converted to a resource to provide better reporting of what wants to happen (or has happened)
               # We only want to do this if the GID has been specified as numeric - if it is text then
               # we assume it already exists
               #create_resources( group, { $name => { gid => $gid} }, $grp_defaults )
@@ -299,23 +300,30 @@ class local_users::add (
                 command => $groupadd_cmd,
                 before  => User[$user],
               }
-
-              if $fix_user_perms {
-                # Also, need to fix the permissions of the files in the home directory if we are changing the GID
-                # Only perform this before the group GID has been fixed - otherwise we can't find out the old GID
-                # The test needs to check if the user exists and that the GID exists, but is different to what is intended
-                # We perform a find for files matching the old GID.  (we don't care if xargs fails, as it will generally mean
-                # there are no matching files)
-                exec { "chgrp ${user}":
-                  path    => '/usr/bin:/usr/sbin:/bin:/sbin',
-                  onlyif  => "id ${user} && perl -e '@g = getpwnam(\"${user}\"); if( @g and \$g[3] ne ${gid} ){ exit 0} else { exit 1 }'",
-                  command => "find ${user_home} -group $(perl -e '@g = getpwnam(\"${user}\"); print \$g[3]') \
-                              | xargs chgrp ${gid} 2>/dev/null || echo ok",
-                  before  => Exec["group ${user}"],
-                }
-              }
-
+              $chgrp_before = Exec["group ${user}"]
             }
+            else {
+              $chgrp_before = undef
+            }
+
+            if $fix_user_perms {
+              # Also, need to fix the permissions of the files in the home directory if we are changing the GID
+              # Only perform this before the group GID has been fixed - otherwise we can't find out the old GID
+              # The test needs to check if the user exists and that the GID exists, but is different to what is intended
+              # We perform a find for files matching the old GID.  (we don't care if xargs fails, as it will generally mean
+              # there are no matching files)
+              exec { "chgrp ${user}":
+                path    => '/usr/bin:/usr/sbin:/bin:/sbin',
+                onlyif  => "id ${user} && perl -e '\
+                            @g = getpwnam(\"${user}\"); \
+                            if( @g and \$g[3] ne (\"${gid}\" =~ /^\\d+\$/ ? \"${gid}\" : scalar getgrnam(\"${gid}\")) )\
+                            { exit 0} else { exit 1 }'",
+                command => "find ${user_home} -group $(perl -e '@g = getpwnam(\"${user}\"); print \$g[3]') \
+                            | xargs chgrp ${gid} 2>/dev/null || echo ok",
+                before  => $chgrp_before,
+              }
+            }
+
             create_resources( user, { $user => $user_props }, $usr_defaults )
             $owner_perm = ($uid + $index)
             $group_perm = $gid

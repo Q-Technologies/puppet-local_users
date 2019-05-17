@@ -287,7 +287,10 @@ to `true` - this will change the GID of the group matching the name with the req
 #### Updating file permssions
 
 When `local_users::add::fix_file_perms` is set to `true` and the UID/GID of the user is changing, any files in the home directory of the user matching the old UID/GID will be updated to the new UID/GID.
-This is not enabled by default.
+This is **not** enabled by default.
+
+If the GID of the user has been specified as a name rather than ID and the GID of that group is being changed by Puppet, the GID of the files in the home directory will not be changed as it is 
+impossible to capture this scenario without re-doing the built-in user resource.
 
 #### Password expiry
 
