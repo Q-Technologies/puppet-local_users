@@ -111,6 +111,7 @@ local_users::add::users:
     uid: 1000
     comment: Joe Blogs
     expiry: none
+    groups: ['a','b','c']
     auth_keys: 
       - 'jblogs@imac.local'
   bsmith:

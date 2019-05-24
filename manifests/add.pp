@@ -340,46 +340,49 @@ class local_users::add (
             $group_perm = $user
           }
 
-          # Make sure each user has a home directory
-          file { "${user}home":
-            ensure  => directory,
-            path    => $user_home,
-            owner   => $owner_perm,
-            group   => $group_perm,
-            seluser => 'system_u',
-            mode    => $mode,
-            require => User[$user],
-          }
+          if ( $user_props[managehome] != undef and $user_props[managehome] ) or
+             ( $user_props[managehome] == undef and $local_users::managehome ) {
+            # Make sure each user has a home directory
+            file { "${user}home":
+              ensure  => directory,
+              path    => $user_home,
+              owner   => $owner_perm,
+              group   => $group_perm,
+              seluser => 'system_u',
+              mode    => $mode,
+              require => User[$user],
+            }
 
-          # Add the specified SSH keys to the account
-          $keys = $props[auth_keys]
-          if $keys =~ Array {
-            $keys.each | $key | {
-              #notify { "Checking authorized keys for $user: $key": }
-              $users_keys.each | $user_key | {
-                $comment = $user_key[comment]
-                #notify { "Checking authorized keys for $user: $key ($comment)": }
-                if $comment == $key {
-                  #notify { "Found authorized keys for $user: $key": }
-                  $sak1 = {
-                    user    => $user,
-                    type    => $user_key['type'],
-                    key     => $user_key['key'],
-                    require => File["${user}home"],
+            # Add the specified SSH keys to the account
+            $keys = $props[auth_keys]
+            if $keys =~ Array {
+              $keys.each | $key | {
+                #notify { "Checking authorized keys for $user: $key": }
+                $users_keys.each | $user_key | {
+                  $comment = $user_key[comment]
+                  #notify { "Checking authorized keys for $user: $key ($comment)": }
+                  if $comment == $key {
+                    #notify { "Found authorized keys for $user: $key": }
+                    $sak1 = {
+                      user    => $user,
+                      type    => $user_key['type'],
+                      key     => $user_key['key'],
+                      require => File["${user}home"],
+                    }
+                    if $user_key['target'] {
+                      $sak2 = merge( $sak1, { target =>  $user_key['target'] } )
+                    }
+                    else {
+                      $sak2 = $sak1
+                    }
+                    if $user_key['options'] {
+                      $sak3 = merge( $sak2, { options =>  $user_key['options'] } )
+                    }
+                    else {
+                      $sak3 = $sak2
+                    }
+                    create_resources( ssh_authorized_key, { "${comment} for ${user}" => $sak3 }, {} )
                   }
-                  if $user_key['target'] {
-                    $sak2 = merge( $sak1, { target =>  $user_key['target'] } )
-                  }
-                  else {
-                    $sak2 = $sak1
-                  }
-                  if $user_key['options'] {
-                    $sak3 = merge( $sak2, { options =>  $user_key['options'] } )
-                  }
-                  else {
-                    $sak3 = $sak2
-                  }
-                  create_resources( ssh_authorized_key, { "${comment} for ${user}" => $sak3 }, {} )
                 }
               }
             }
