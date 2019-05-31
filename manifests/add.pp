@@ -84,7 +84,9 @@ class local_users::add (
       $gid = $props[gid]
     }
     else {
-      $gid = $uid
+      if defined( '$uid' ) {
+          $gid = $uid
+      }
     }
 
     # Make sure we have the home directory - root's can be guessed
@@ -252,7 +254,7 @@ class local_users::add (
           }
 
           # If a UID is specified, supply GID also
-          if $uid {
+          if defined( '$uid' ) {
             # Merge our optimisations with the raw hiera data
             $new_uid = $uid + $index
             $user_props = merge( $clean_props,  { uid => $new_uid,
@@ -274,7 +276,7 @@ class local_users::add (
             }
 
             # We need to force $gid to string to perform regex even though PDK complains
-            if "${gid}" =~ /^\d+$/ {
+            if String($gid) =~ /^\d+$/ {
               # Make sure the specified gid exists - must use exec as group resource only manages by name
               # Perhaps this should be converted to a resource to provide better reporting of what wants to happen (or has happened)
               # We only want to do this if the GID has been specified as numeric - if it is text then
@@ -340,8 +342,8 @@ class local_users::add (
             $group_perm = $user
           }
 
-          if ( $user_props[managehome] != undef and $user_props[managehome] ) or
-             ( $user_props[managehome] == undef and $local_users::managehome ) {
+          if  ( $user_props[managehome] != undef and $user_props[managehome] ) or
+              ( $user_props[managehome] == undef and $local_users::managehome ) {
             # Make sure each user has a home directory
             file { "${user}home":
               ensure  => directory,
