@@ -1,6 +1,5 @@
 {
   "name": "qtechnologies-local_users",
-
   "version": "1.4.1",
   "author": "Q-Technologies",
   "summary": "Puppet module to easily manage local users and their authorized keys",
@@ -32,8 +31,8 @@
     {
       "operatingsystem": "RedHat",
       "operatingsystemrelease": [
-        "6.0",
-        "7.0"
+        "6",
+        "7"
       ]
     },
     {
@@ -57,7 +56,7 @@
     "ssh_keys",
     "sshkeys"
   ],
-  "pdk-version": "1.9.1",
-  "template-url": "file:///opt/puppetlabs/pdk/share/cache/pdk-templates.git",
-  "template-ref": "1.9.1-0-g6945d31"
+  "pdk-version": "1.18.0",
+  "template-url": "pdk-default#1.18.0",
+  "template-ref": "tags/1.18.0-0-g095317c"
 }
