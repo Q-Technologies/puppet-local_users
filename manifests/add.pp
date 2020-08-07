@@ -34,13 +34,7 @@ class local_users::add (
   }
 
   # Do group actions first
-  $groups_lookup = $local_users::groups_to_add
-  $groups = $groups_lookup ? {
-    Array   => merge({}, {}, *flatten($groups_lookup)),
-    default => $groups_lookup
-  }
-
-  $groups.each | $group, $props | {
+  $local_users::groups_to_add.each | $group, $props | {
     create_resources( group, { $group => $props }, $grp_defaults )
   }
 
@@ -48,16 +42,9 @@ class local_users::add (
   if $facts['osfamily'] == 'AIX' {
         $users_pgrp = $facts['user_group']
   }
+
   # Then perform actions on users
-  $users_lookup = $local_users::users_to_add
-  $users_keys = $local_users::users_keys
-
-  $users = $users_lookup ? {
-    Array   => merge({}, {}, *flatten($users_lookup)),
-    default => $users_lookup
-  }
-
-  $users.each | $name, $props | {
+  $local_users::users_to_add.each | $name, $props | {
     #notify { "Checking user: $user ($props)": }
 
     if $props[generate] {
@@ -360,7 +347,7 @@ class local_users::add (
             if $keys =~ Array {
               $keys.each | $key | {
                 #notify { "Checking authorized keys for $user: $key": }
-                $users_keys.each | $user_key | {
+                $local_users::users_keys.each | $user_key | {
                   $comment = $user_key[comment]
                   #notify { "Checking authorized keys for $user: $key ($comment)": }
                   if $comment == $key {

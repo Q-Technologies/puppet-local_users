@@ -34,6 +34,7 @@ end
 
 RSpec.configure do |c|
   c.default_facts = default_facts
+  c.hiera_config = 'spec/fixtures/hiera/hiera.yaml'
   c.before :each do
     # set to strictest setting for testing
     # by default Puppet runs at warning level
@@ -55,3 +56,4 @@ def ensure_module_defined(module_name)
 end
 
 # 'spec_overrides' from sync.yml will appear below this line
+add_custom_fact :user_group, { 'root' => 'wheel' }, :confine => 'aix-7100-IBM,8284-22A'
