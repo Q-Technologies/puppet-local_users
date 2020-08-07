@@ -56,4 +56,4 @@ def ensure_module_defined(module_name)
 end
 
 # 'spec_overrides' from sync.yml will appear below this line
-add_custom_fact :user_group, { 'root' => 'wheel' }, :confine => 'aix-7100-IBM,8284-22A'
+add_custom_fact :user_group, { 'root' => 'wheel' }, :confine, 'aix-7100-IBM,8284-22A'
