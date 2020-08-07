@@ -1,0 +1,4 @@
+spec/spec_helper.rb:
+  hiera_config: spec/fixtures/hiera/hiera.yaml
+  spec_overrides: |-
+    add_custom_fact :user_group, { 'root' => 'wheel' }, :confine => 'aix-7100-IBM,8284-22A'
